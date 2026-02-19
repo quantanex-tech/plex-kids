@@ -36,6 +36,7 @@ Build a **kid-friendly Plex client** for **Android (mobile + tablet)** that feel
 ### Home
 - Continue Watching
 - Recently Added (from allowed libraries)
+- Random picks (simple shuffle from allowed libraries; no fancy algorithm in MVP)
 - Library tiles (big, simple)
 
 ### Browsing
@@ -49,7 +50,10 @@ Build a **kid-friendly Plex client** for **Android (mobile + tablet)** that feel
 ### Playback
 - Play video streams from Plex
 - Resume playback
-- **Miniplayer overlay** with browse rails for quick switching to other shows/movies
+- **Miniplayer overlay** with browse rails for quick switching:
+  - Continue Watching
+  - Recently Added
+  - Random picks (simple shuffle)
 - Basic subtitle toggle (optional for MVP; parent-locked later)
 
 ### Settings (parent-gated)

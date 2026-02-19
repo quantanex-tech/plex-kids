@@ -12,3 +12,10 @@ Early planning / requirements.
 
 ## Development
 Flutter (UI initially prototyped in FlutterFlow; core app in Flutter/Dart).
+
+### Flutter SDK
+This repo uses a **local Flutter SDK** at `./.flutter/` (ignored by git).
+
+Run via:
+- `./scripts/flutter.sh doctor`
+- `cd app && ../scripts/flutter.sh run`

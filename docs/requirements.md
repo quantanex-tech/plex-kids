@@ -16,6 +16,7 @@ Build a **kid-friendly Plex client** for **Android (mobile + tablet)** that feel
 
 ## Content source and filtering
 - Content is sourced from **Plex Libraries**.
+- MVP supports **TV + Movies libraries only**.
 - For v1, filtering is at the library level (only selected libraries are visible).
   - Future: per-show allow/block lists, Collections/Labels, ratings filters.
 
@@ -28,7 +29,7 @@ Build a **kid-friendly Plex client** for **Android (mobile + tablet)** that feel
 
 ## MVP feature set
 ### Onboarding
-- Plex sign-in (OAuth/PIN flow) and server selection
+- Plex sign-in via **web auth** (preferred) and server selection
 - Select Plex user / managed user
 - Parent gate to access settings
 
@@ -42,9 +43,13 @@ Build a **kid-friendly Plex client** for **Android (mobile + tablet)** that feel
 - Shows: show → seasons → episodes
 - Episode details: play/resume
 
+### Search
+- Search across **allowed libraries** (not the primary UX focus)
+
 ### Playback
 - Play video streams from Plex
 - Resume playback
+- **Miniplayer overlay** with browse rails for quick switching to other shows/movies
 - Basic subtitle toggle (optional for MVP; parent-locked later)
 
 ### Settings (parent-gated)

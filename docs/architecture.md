@@ -20,10 +20,12 @@
 
 ## Key architectural decisions
 - Library-level filtering for v1
+- MVP supports **TV + Movies libraries only**
 - Plex user profiles are the source of identity
 - Parent-gated settings area
+- Prefer **Plex web auth** for sign-in
+- Player UX includes a **miniplayer overlay** + browse rails
 
 ## Open questions
-- Preferred Plex auth flow: PIN login vs web OAuth
-- Subtitle and audio track controls for kids UI
+- Subtitle and audio track controls for kids UI (parent-locked?)
 - Metrics/logging approach (local only?)

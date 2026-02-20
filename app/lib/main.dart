@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'src/ui/plex_spike_screen.dart';
+import 'src/ui/auth_spike_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +22,7 @@ class PlexKidsApp extends StatelessWidget {
     return MaterialApp(
       title: 'Plex Kids',
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo)),
-      home: const PlexSpikeScreen(),
+      home: const AuthSpikeScreen(),
     );
   }
 }

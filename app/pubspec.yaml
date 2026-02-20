@@ -46,6 +46,12 @@ dependencies:
   # Secrets
   flutter_secure_storage: ^9.2.4
 
+  # External browser auth
+  url_launcher: ^6.3.2
+
+  # Plex resource discovery returns XML
+  xml: ^6.5.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

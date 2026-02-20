@@ -1,6 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SecureStore {
+  static const _kClientIdentifier = 'plex.clientIdentifier';
   static const _kAccountToken = 'plex.accountToken';
   static const _kUserToken = 'plex.userToken';
   static const _kServerMachineId = 'plex.serverMachineId';
@@ -9,6 +10,9 @@ class SecureStore {
   final FlutterSecureStorage _storage;
 
   const SecureStore(this._storage);
+
+  Future<String?> readClientIdentifier() => _storage.read(key: _kClientIdentifier);
+  Future<void> writeClientIdentifier(String id) => _storage.write(key: _kClientIdentifier, value: id);
 
   Future<String?> readAccountToken() => _storage.read(key: _kAccountToken);
   Future<void> writeAccountToken(String token) => _storage.write(key: _kAccountToken, value: token);

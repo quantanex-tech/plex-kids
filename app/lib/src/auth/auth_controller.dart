@@ -16,13 +16,10 @@ class AuthController extends StateNotifier<AuthState> {
   final PlexResourcesApi _resources;
   final PlexConnectionSelector _selector;
 
-  /// A stable client id; for now we hardcode a deterministic-ish value.
-  /// Later we can persist a generated UUID.
-  final String clientIdentifier;
+  String? _clientIdentifier;
 
   AuthController({
     required SecureStore store,
-    required this.clientIdentifier,
   })  : _store = store,
         _pinAuth = PlexPinAuth(),
         _homeUsers = PlexHomeUsersApi(),
@@ -30,7 +27,27 @@ class AuthController extends StateNotifier<AuthState> {
         _selector = PlexConnectionSelector(),
         super(AuthState.initial());
 
+  Future<String> _ensureClientIdentifier() async {
+    if (_clientIdentifier != null && _clientIdentifier!.isNotEmpty) {
+      return _clientIdentifier!;
+    }
+
+    final existing = await _store.readClientIdentifier();
+    if (existing != null && existing.isNotEmpty) {
+      _clientIdentifier = existing;
+      return existing;
+    }
+
+    // Best-effort unique id without extra deps.
+    final id = 'plex-kids-${DateTime.now().microsecondsSinceEpoch}';
+    await _store.writeClientIdentifier(id);
+    _clientIdentifier = id;
+    return id;
+  }
+
   Future<void> restore() async {
+    _clientIdentifier = await _store.readClientIdentifier();
+
     final account = await _store.readAccountToken();
     final user = await _store.readUserToken();
     final baseUrl = await _store.readServerBaseUrl();
@@ -48,6 +65,8 @@ class AuthController extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
+      final clientIdentifier = await _ensureClientIdentifier();
+
       // 1) Create PIN + open browser
       final pin = await _pinAuth.createPin(clientIdentifier: clientIdentifier);
       final url = _pinAuth.buildAuthUrl(pin: pin, clientIdentifier: clientIdentifier);

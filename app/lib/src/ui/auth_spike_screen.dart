@@ -26,8 +26,33 @@ class _AuthView extends ConsumerWidget {
 
   const _AuthView({required this.state});
 
+  Future<String?> _promptForPin(BuildContext context, {required String title}) async {
+    final controller = TextEditingController();
+    final result = await showDialog<String?>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: TextField(
+            controller: controller,
+            obscureText: true,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(hintText: 'PIN'),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, null), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('OK')),
+          ],
+        );
+      },
+    );
+    return result;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final ctl = ref.read(authControllerProvider.notifier);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Sign in')),
       body: Padding(
@@ -37,8 +62,7 @@ class _AuthView extends ConsumerWidget {
           children: [
             const Text(
               'Plex Kids (Spike)\n\n'
-              'This will open Plex login in your browser, then the app will poll until login completes.\n'
-              'After login we switch to the first managed user (kid) for now.',
+              'This will open Plex login in your browser, then the app will poll until login completes.',
             ),
             const SizedBox(height: 12),
             if (state.error != null) ...[
@@ -49,18 +73,53 @@ class _AuthView extends ConsumerWidget {
               onPressed: state.isLoading
                   ? null
                   : () async {
-                      final ctl = ref.read(authControllerProvider.notifier);
-                      await ctl.signInAndSelectKid();
+                      await ctl.signIn();
                     },
               child: state.isLoading ? const Text('Working...') : const Text('Sign in to Plex'),
             ),
+            const SizedBox(height: 16),
+            if (state.accountToken != null && state.homeUsers.isNotEmpty) ...[
+              Text('Choose profile', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              Expanded(
+                child: ListView.separated(
+                  itemCount: state.homeUsers.length,
+                  separatorBuilder: (context, index) => const Divider(height: 1),
+                  itemBuilder: (context, i) {
+                    final u = state.homeUsers[i];
+                    final subtitle = <String>[];
+                    if (u.isManaged) subtitle.add('managed');
+                    if (u.isProtected) subtitle.add('PIN');
+
+                    return ListTile(
+                      title: Text(u.title),
+                      subtitle: subtitle.isEmpty ? null : Text(subtitle.join(' • ')),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: state.isLoading
+                          ? null
+                          : () async {
+                              String? pin;
+                              if (u.isProtected) {
+                                pin = await _promptForPin(context, title: 'Enter PIN for ${u.title}');
+                                if (pin == null) return;
+                              }
+
+                              await ctl.selectHomeUser(userId: u.id, pin: pin);
+                            },
+                    );
+                  },
+                ),
+              ),
+            ] else ...[
+              const Spacer(),
+            ],
             const SizedBox(height: 12),
             Text('Server: ${state.serverName ?? '-'}'),
             Text('Base URL: ${state.serverBaseUrl ?? '-'}'),
-            const Spacer(),
+            const SizedBox(height: 8),
             TextButton(
               onPressed: () async {
-                await ref.read(authControllerProvider.notifier).signOut();
+                await ctl.signOut();
               },
               child: const Text('Clear session'),
             ),

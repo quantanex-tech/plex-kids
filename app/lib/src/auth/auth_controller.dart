@@ -44,7 +44,7 @@ class AuthController extends StateNotifier<AuthState> {
     );
   }
 
-  Future<void> signInAndSelectKid({String? kidPin}) async {
+  Future<void> signIn() async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -52,39 +52,51 @@ class AuthController extends StateNotifier<AuthState> {
       final pin = await _pinAuth.createPin(clientIdentifier: clientIdentifier);
       final url = _pinAuth.buildAuthUrl(pin: pin, clientIdentifier: clientIdentifier);
       final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-      if (!ok) {
-        throw StateError('Could not open browser for Plex login');
-      }
+      if (!ok) throw StateError('Could not open browser for Plex login');
 
       // 2) Poll for account token
       final accountToken = await _pinAuth.pollForAuthToken(pin: pin, clientIdentifier: clientIdentifier);
       await _store.writeAccountToken(accountToken);
 
-      // 3) List home users and pick a managed user (kid). For now: first managed user.
+      // 3) List home users (main + managed users)
       final users = await _homeUsers.listUsers(accountToken: accountToken);
-      final kid = users.where((u) => u.isManaged).firstOrNull;
-      if (kid == null) {
-        throw StateError('No managed users found. Create a managed user in Plex Home.');
-      }
+      if (users.isEmpty) throw StateError('No Plex Home users returned.');
 
-      // 4) Switch to that user
+      state = state.copyWith(
+        isLoading: false,
+        accountToken: accountToken,
+        homeUsers: users,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      rethrow;
+    }
+  }
+
+  Future<void> selectHomeUser({required String userId, String? pin}) async {
+    final accountToken = state.accountToken;
+    if (accountToken == null || accountToken.isEmpty) {
+      throw StateError('Not signed in');
+    }
+
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      // 1) Switch to selected user (managed user may require PIN)
       final userToken = await _homeUsers.switchUser(
         accountToken: accountToken,
-        userId: kid.id,
-        pin: kid.isProtected ? (kidPin ?? '') : null,
+        userId: userId,
+        pin: pin,
       );
       await _store.writeUserToken(userToken);
 
-      // 5) Discover servers (assume one server for MVP)
+      // 2) Discover servers (assume one server for MVP)
       final servers = await _resources.listServers(token: userToken);
       if (servers.isEmpty) throw StateError('No Plex servers found for this account');
       final server = servers.first;
 
-      // 6) Choose best connection (local first, but short timeouts)
-      final candidates = server.connections
-          .map((c) => (c.uri, c.local))
-          .toList(growable: false);
-
+      // 3) Choose best connection (local first, but short timeouts)
+      final candidates = server.connections.map((c) => (c.uri, c.local)).toList(growable: false);
       final best = await _selector.chooseBest(
         candidates: candidates,
         token: userToken,
@@ -96,7 +108,6 @@ class AuthController extends StateNotifier<AuthState> {
 
       state = state.copyWith(
         isLoading: false,
-        accountToken: accountToken,
         userToken: userToken,
         serverName: server.name,
         serverMachineId: server.machineIdentifier,
@@ -114,6 +125,4 @@ class AuthController extends StateNotifier<AuthState> {
   }
 }
 
-extension _FirstOrNull<T> on Iterable<T> {
-  T? get firstOrNull => isEmpty ? null : first;
-}
+// (removed unused helper)

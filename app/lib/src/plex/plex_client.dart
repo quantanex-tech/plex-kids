@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import 'plex_media_models.dart';
 import 'plex_models.dart';
+import 'plex_playback_parser.dart';
 
 class PlexClient {
   final Dio _dio;
@@ -99,6 +100,16 @@ class PlexClient {
     );
 
     return PlexMediaContainerParser.parseMetadata(res.data);
+  }
+
+  /// Fetch metadata for a given ratingKey and return the first playable Part key.
+  Future<String> getFirstPartKey({required String ratingKey}) async {
+    final res = await _dio.get('/library/metadata/$ratingKey');
+    final info = PlexPlaybackParser.parseFirstPart(res.data);
+    if (info == null) {
+      throw StateError('No playable part found for ratingKey=$ratingKey');
+    }
+    return info.partKey;
   }
 }
 

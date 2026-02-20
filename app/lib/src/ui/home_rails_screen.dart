@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../plex/plex_media_models.dart';
 import '../plex/plex_models.dart';
 import '../providers.dart';
+import 'player_screen.dart';
 
 class HomeRailsScreen extends ConsumerWidget {
   const HomeRailsScreen({super.key});
@@ -141,7 +142,16 @@ class _RailSection extends StatelessWidget {
                 separatorBuilder: (context, index) => const SizedBox(width: 12),
                 itemBuilder: (context, i) {
                   final it = items[i];
-                  return _MediaCard(item: it);
+                  return _MediaCard(
+                    item: it,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => PlayerScreen(item: it),
+                        ),
+                      );
+                    },
+                  );
                 },
               ),
             );
@@ -152,36 +162,60 @@ class _RailSection extends StatelessWidget {
   }
 }
 
-class _MediaCard extends StatelessWidget {
+class _MediaCard extends ConsumerWidget {
   final PlexMediaItem item;
+  final VoidCallback onTap;
 
-  const _MediaCard({required this.item});
+  const _MediaCard({required this.item, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authControllerProvider);
+
+    String? thumbUrl;
+    if (item.thumb != null && auth.serverBaseUrl != null && auth.userToken != null) {
+      // Build thumbnail URL with token.
+      thumbUrl = '${auth.serverBaseUrl}${item.thumb}?X-Plex-Token=${auth.userToken}';
+    }
+
     return SizedBox(
       width: 140,
       child: Material(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          onTap: () {
-            // TODO: navigate to details / start playback.
-          },
-          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      item.type.toUpperCase(),
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
+                AspectRatio(
+                  aspectRatio: 1, // YouTube Kids-ish square
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: thumbUrl == null
+                        ? Container(
+                            color: Theme.of(context).colorScheme.surface,
+                            child: Center(
+                              child: Text(
+                                item.type.toUpperCase(),
+                                style: Theme.of(context).textTheme.labelSmall,
+                              ),
+                            ),
+                          )
+                        : Image.network(
+                            thumbUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: Theme.of(context).colorScheme.surface,
+                              child: const Center(child: Icon(Icons.broken_image_outlined)),
+                            ),
+                          ),
                   ),
                 ),
+                const SizedBox(height: 8),
                 Text(
                   item.title,
                   maxLines: 2,

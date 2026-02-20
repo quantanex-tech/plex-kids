@@ -52,6 +52,9 @@ dependencies:
   # Plex resource discovery returns XML
   xml: ^6.5.0
 
+  # Playback
+  video_player: ^2.10.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

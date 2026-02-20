@@ -5,6 +5,7 @@ import 'app_config.dart';
 import 'auth/auth_controller.dart';
 import 'auth/auth_state.dart';
 import 'plex/plex_client.dart';
+import 'plex/plex_media_models.dart';
 import 'plex/plex_models.dart';
 import 'storage/secure_store.dart';
 
@@ -44,4 +45,26 @@ final plexLibrariesProvider = FutureProvider<List<PlexLibrary>>((ref) async {
   final libs = await client.listLibraries();
   // MVP: only TV + Movies.
   return libs.where((l) => l.type == 'movie' || l.type == 'show').toList(growable: false);
+});
+
+final selectedLibraryProvider = StateProvider<PlexLibrary?>((ref) {
+  return null;
+});
+
+final onDeckProvider = FutureProvider((ref) async {
+  final client = ref.watch(plexClientProvider);
+  if (client == null) return const <PlexMediaItem>[];
+  return client.onDeck(size: 30);
+});
+
+final recentlyAddedProvider = FutureProvider.family((ref, String libraryId) async {
+  final client = ref.watch(plexClientProvider);
+  if (client == null) return const <PlexMediaItem>[];
+  return client.recentlyAdded(libraryId: libraryId, size: 30);
+});
+
+final randomPicksProvider = FutureProvider.family((ref, String libraryId) async {
+  final client = ref.watch(plexClientProvider);
+  if (client == null) return const <PlexMediaItem>[];
+  return client.randomPicks(libraryId: libraryId, size: 30);
 });

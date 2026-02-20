@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'plex_media_models.dart';
 import 'plex_models.dart';
 
 class PlexClient {
@@ -57,4 +58,47 @@ class PlexClient {
 
     return const [];
   }
+
+  /// Continue Watching (Plex "On Deck")
+  Future<List<PlexMediaItem>> onDeck({int size = 30}) async {
+    final res = await _dio.get(
+      '/library/onDeck',
+      queryParameters: {
+        'X-Plex-Container-Start': 0,
+        'X-Plex-Container-Size': size,
+      },
+    );
+
+    return PlexMediaContainerParser.parseMetadata(res.data);
+  }
+
+  /// Recently added items for a specific library section.
+  Future<List<PlexMediaItem>> recentlyAdded({required String libraryId, int size = 30}) async {
+    final res = await _dio.get(
+      '/library/sections/$libraryId/recentlyAdded',
+      queryParameters: {
+        'X-Plex-Container-Start': 0,
+        'X-Plex-Container-Size': size,
+      },
+    );
+
+    return PlexMediaContainerParser.parseMetadata(res.data);
+  }
+
+  /// Random picks from a library.
+  ///
+  /// Plex supports `sort=random` on many endpoints.
+  Future<List<PlexMediaItem>> randomPicks({required String libraryId, int size = 30}) async {
+    final res = await _dio.get(
+      '/library/sections/$libraryId/all',
+      queryParameters: {
+        'sort': 'random',
+        'X-Plex-Container-Start': 0,
+        'X-Plex-Container-Size': size,
+      },
+    );
+
+    return PlexMediaContainerParser.parseMetadata(res.data);
+  }
 }
+

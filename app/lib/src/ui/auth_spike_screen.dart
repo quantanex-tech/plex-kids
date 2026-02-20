@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../auth/auth_state.dart';
 import '../providers.dart';
-import 'plex_spike_screen.dart';
+import 'home_rails_screen.dart';
 
 class AuthSpikeScreen extends ConsumerWidget {
   const AuthSpikeScreen({super.key});
@@ -13,8 +13,7 @@ class AuthSpikeScreen extends ConsumerWidget {
     final auth = ref.watch(authControllerProvider);
 
     if (auth.userToken != null && auth.serverBaseUrl != null) {
-      // We have enough to use PlexClient in the existing spike.
-      return const PlexSpikeScreen();
+      return const HomeRailsScreen();
     }
 
     return _AuthView(state: auth);

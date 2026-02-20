@@ -1,0 +1,198 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../plex/plex_media_models.dart';
+import '../plex/plex_models.dart';
+import '../providers.dart';
+
+class HomeRailsScreen extends ConsumerWidget {
+  const HomeRailsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final libsAsync = ref.watch(plexLibrariesProvider);
+    final onDeckAsync = ref.watch(onDeckProvider);
+    final selected = ref.watch(selectedLibraryProvider);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Plex Kids')),
+      body: libsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, st) => SingleChildScrollView(child: Text('Error: $e\n\n$st')),
+        data: (libs) {
+          if (libs.isEmpty) {
+            return const Center(child: Text('No TV/Movie libraries found.'));
+          }
+
+          final lib = selected ?? libs.first;
+          if (selected == null) {
+            // Set default once.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ref.read(selectedLibraryProvider.notifier).state = lib;
+            });
+          }
+
+          final recentlyAsync = ref.watch(recentlyAddedProvider(lib.id));
+          final randomAsync = ref.watch(randomPicksProvider(lib.id));
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(onDeckProvider);
+              ref.invalidate(recentlyAddedProvider(lib.id));
+              ref.invalidate(randomPicksProvider(lib.id));
+              ref.invalidate(plexLibrariesProvider);
+            },
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _LibraryPicker(libraries: libs, selected: lib),
+                const SizedBox(height: 16),
+
+                _RailSection(
+                  title: 'Continue Watching',
+                  asyncItems: onDeckAsync,
+                ),
+                const SizedBox(height: 16),
+
+                _RailSection(
+                  title: 'Recently Added • ${lib.title}',
+                  asyncItems: recentlyAsync,
+                ),
+                const SizedBox(height: 16),
+
+                _RailSection(
+                  title: 'Random Picks • ${lib.title}',
+                  asyncItems: randomAsync,
+                ),
+                const SizedBox(height: 32),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _LibraryPicker extends ConsumerWidget {
+  final List<PlexLibrary> libraries;
+  final PlexLibrary selected;
+
+  const _LibraryPicker({required this.libraries, required this.selected});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Row(
+      children: [
+        Expanded(
+          child: DropdownButtonFormField<String>(
+            initialValue: selected.id,
+            decoration: const InputDecoration(
+              labelText: 'Library',
+              border: OutlineInputBorder(),
+            ),
+            items: [
+              for (final l in libraries)
+                DropdownMenuItem(
+                  value: l.id,
+                  child: Text('${l.title} (${l.type})'),
+                ),
+            ],
+            onChanged: (id) {
+              final lib = libraries.firstWhere((l) => l.id == id);
+              ref.read(selectedLibraryProvider.notifier).state = lib;
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RailSection extends StatelessWidget {
+  final String title;
+  final AsyncValue<List<PlexMediaItem>> asyncItems;
+
+  const _RailSection({required this.title, required this.asyncItems});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        asyncItems.when(
+          loading: () => const SizedBox(
+            height: 120,
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (e, st) => Text('Error: $e'),
+          data: (items) {
+            if (items.isEmpty) {
+              return const Text('Nothing here yet.');
+            }
+
+            return SizedBox(
+              height: 150,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: items.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 12),
+                itemBuilder: (context, i) {
+                  final it = items[i];
+                  return _MediaCard(item: it);
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _MediaCard extends StatelessWidget {
+  final PlexMediaItem item;
+
+  const _MediaCard({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 140,
+      child: Material(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: () {
+            // TODO: navigate to details / start playback.
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      item.type.toUpperCase(),
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                  ),
+                ),
+                Text(
+                  item.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -31,16 +31,8 @@ class PlexHomeUsersApi {
           ),
         );
 
-  Future<List<PlexHomeUser>> listUsers({required String accountToken}) async {
-    // XML: https://plex.tv/api/home/users
-    final res = await _dio.get(
-      '/api/home/users',
-      queryParameters: {
-        'X-Plex-Token': accountToken,
-      },
-    );
-
-    final xml = XmlDocument.parse(res.data as String);
+  static List<PlexHomeUser> parseUsersXml(String xmlString) {
+    final xml = XmlDocument.parse(xmlString);
     final users = <PlexHomeUser>[];
 
     for (final u in xml.findAllElements('User')) {
@@ -54,6 +46,18 @@ class PlexHomeUsersApi {
     }
 
     return users;
+  }
+
+  Future<List<PlexHomeUser>> listUsers({required String accountToken}) async {
+    // XML: https://plex.tv/api/home/users
+    final res = await _dio.get(
+      '/api/home/users',
+      queryParameters: {
+        'X-Plex-Token': accountToken,
+      },
+    );
+
+    return parseUsersXml(res.data as String);
   }
 
   /// Switch to a home user and return the user token.

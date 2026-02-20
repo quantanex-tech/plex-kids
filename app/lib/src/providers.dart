@@ -40,5 +40,8 @@ final plexClientProvider = Provider<PlexClient?>((ref) {
 final plexLibrariesProvider = FutureProvider<List<PlexLibrary>>((ref) async {
   final client = ref.watch(plexClientProvider);
   if (client == null) return const [];
-  return client.listLibraries();
+
+  final libs = await client.listLibraries();
+  // MVP: only TV + Movies.
+  return libs.where((l) => l.type == 'movie' || l.type == 'show').toList(growable: false);
 });

@@ -10,8 +10,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plex_kids/main.dart';
 
 void main() {
-  testWidgets('App renders', (WidgetTester tester) async {
-    await tester.pumpWidget(const PlexKidsApp());
-    expect(find.text('Plex connectivity spike'), findsOneWidget);
+  testWidgets('App renders sign-in screen', (WidgetTester tester) async {
+    await tester.pumpWidget(const PlexKidsRoot());
+    expect(find.text('Sign in'), findsOneWidget);
+    expect(find.text('Sign in to Plex'), findsOneWidget);
   });
 }

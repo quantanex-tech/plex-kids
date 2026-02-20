@@ -33,19 +33,8 @@ class PlexResourcesApi {
           ),
         );
 
-  Future<List<PlexResourceServer>> listServers({required String token}) async {
-    // Returns XML.
-    final res = await _dio.get(
-      '/api/resources',
-      queryParameters: {
-        'includeHttps': 1,
-        'includeRelay': 1,
-        'includeIPv6': 1,
-        'X-Plex-Token': token,
-      },
-    );
-
-    final xml = XmlDocument.parse(res.data as String);
+  static List<PlexResourceServer> parseResourcesXml(String xmlString) {
+    final xml = XmlDocument.parse(xmlString);
     final devices = xml.findAllElements('Device');
 
     final servers = <PlexResourceServer>[];
@@ -73,5 +62,20 @@ class PlexResourcesApi {
     }
 
     return servers;
+  }
+
+  Future<List<PlexResourceServer>> listServers({required String token}) async {
+    // Returns XML.
+    final res = await _dio.get(
+      '/api/resources',
+      queryParameters: {
+        'includeHttps': 1,
+        'includeRelay': 1,
+        'includeIPv6': 1,
+        'X-Plex-Token': token,
+      },
+    );
+
+    return parseResourcesXml(res.data as String);
   }
 }

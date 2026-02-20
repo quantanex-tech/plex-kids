@@ -11,7 +11,16 @@ Future<void> main() async {
   // validate Plex connectivity without committing secrets.
   await dotenv.load(fileName: '.env', isOptional: true);
 
-  runApp(const ProviderScope(child: PlexKidsApp()));
+  runApp(const PlexKidsRoot());
+}
+
+class PlexKidsRoot extends StatelessWidget {
+  const PlexKidsRoot({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const ProviderScope(child: PlexKidsApp());
+  }
 }
 
 class PlexKidsApp extends StatelessWidget {

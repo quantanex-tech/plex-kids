@@ -15,6 +15,9 @@ class PlexMediaItem {
   final int? index;
   final int? parentIndex;
 
+  /// Library section.
+  final String? librarySectionId;
+
   const PlexMediaItem({
     required this.ratingKey,
     required this.title,
@@ -25,6 +28,7 @@ class PlexMediaItem {
     this.grandparentThumb,
     this.index,
     this.parentIndex,
+    this.librarySectionId,
   });
 
   factory PlexMediaItem.fromPlexJson(Map<String, dynamic> json) {
@@ -53,6 +57,9 @@ class PlexMediaItem {
           (json['grandparentThumb'] ?? '').toString().isEmpty ? null : (json['grandparentThumb'] ?? '').toString(),
       index: asInt(json['index']),
       parentIndex: asInt(json['parentIndex']),
+      librarySectionId: (json['librarySectionID'] ?? '').toString().isEmpty
+          ? null
+          : (json['librarySectionID'] ?? '').toString(),
     );
   }
 }

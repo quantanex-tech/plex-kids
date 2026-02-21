@@ -13,6 +13,7 @@ void main() {
       'grandparentThumb': '/thumb/show',
       'parentIndex': 1,
       'index': 2,
+      'librarySectionID': 7,
     };
 
     final item = PlexMediaItem.fromPlexJson(json);
@@ -21,5 +22,6 @@ void main() {
     expect(item.grandparentThumb, '/thumb/show');
     expect(item.parentIndex, 1);
     expect(item.index, 2);
+    expect(item.librarySectionId, '7');
   });
 }

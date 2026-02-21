@@ -40,9 +40,15 @@ class HomeRailsScreen extends ConsumerWidget {
 
           final mediaType = lib.type == 'show' ? 'episode' : 'movie';
 
-          final filteredOnDeckAsync = onDeckAsync.whenData(
-            (items) => items.where((it) => it.type == mediaType).toList(growable: false),
-          );
+          final filteredOnDeckAsync = onDeckAsync.whenData((items) {
+            final byType = items.where((it) => it.type == mediaType).toList(growable: false);
+
+            // Prefer items that belong to the currently selected library if we can.
+            final matchingLibrary = byType.where((it) => it.librarySectionId == lib.id).toList(growable: false);
+            if (matchingLibrary.isNotEmpty) return matchingLibrary;
+
+            return byType;
+          });
           final filteredRecentlyAsync = recentlyAsync.whenData(
             (items) => items.where((it) => it.type == mediaType).toList(growable: false),
           );

@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../plex/plex_media_models.dart';
 import '../plex/plex_models.dart';
 import '../providers.dart';
+import 'channel_badge.dart';
 import 'player_screen.dart';
+import 'show_screen.dart';
 
 class HomeRailsScreen extends ConsumerWidget {
   const HomeRailsScreen({super.key});
@@ -36,6 +38,18 @@ class HomeRailsScreen extends ConsumerWidget {
           final recentlyAsync = ref.watch(recentlyAddedProvider(lib.id));
           final randomAsync = ref.watch(randomPicksProvider(lib.id));
 
+          final mediaType = lib.type == 'show' ? 'episode' : 'movie';
+
+          final filteredOnDeckAsync = onDeckAsync.whenData(
+            (items) => items.where((it) => it.type == mediaType).toList(growable: false),
+          );
+          final filteredRecentlyAsync = recentlyAsync.whenData(
+            (items) => items.where((it) => it.type == mediaType).toList(growable: false),
+          );
+          final filteredRandomAsync = randomAsync.whenData(
+            (items) => items.where((it) => it.type == mediaType).toList(growable: false),
+          );
+
           return RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(onDeckProvider);
@@ -51,19 +65,19 @@ class HomeRailsScreen extends ConsumerWidget {
 
                 _RailSection(
                   title: 'Continue Watching',
-                  asyncItems: onDeckAsync,
+                  asyncItems: filteredOnDeckAsync,
                 ),
                 const SizedBox(height: 16),
 
                 _RailSection(
                   title: 'Recently Added • ${lib.title}',
-                  asyncItems: recentlyAsync,
+                  asyncItems: filteredRecentlyAsync,
                 ),
                 const SizedBox(height: 16),
 
                 _RailSection(
                   title: 'Random Picks • ${lib.title}',
-                  asyncItems: randomAsync,
+                  asyncItems: filteredRandomAsync,
                 ),
                 const SizedBox(height: 32),
               ],
@@ -151,6 +165,18 @@ class _RailSection extends StatelessWidget {
                         ),
                       );
                     },
+                    onTapChannel: (it.grandparentRatingKey != null && it.grandparentTitle != null)
+                        ? () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ShowScreen(
+                                  showRatingKey: it.grandparentRatingKey!,
+                                  showTitle: it.grandparentTitle!,
+                                ),
+                              ),
+                            );
+                          }
+                        : null,
                   );
                 },
               ),
@@ -165,8 +191,9 @@ class _RailSection extends StatelessWidget {
 class _MediaCard extends ConsumerWidget {
   final PlexMediaItem item;
   final VoidCallback onTap;
+  final VoidCallback? onTapChannel;
 
-  const _MediaCard({required this.item, required this.onTap});
+  const _MediaCard({required this.item, required this.onTap, this.onTapChannel});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -193,26 +220,41 @@ class _MediaCard extends ConsumerWidget {
               children: [
                 AspectRatio(
                   aspectRatio: 1, // YouTube Kids-ish square
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: thumbUrl == null
-                        ? Container(
-                            color: Theme.of(context).colorScheme.surface,
-                            child: Center(
-                              child: Text(
-                                item.type.toUpperCase(),
-                                style: Theme.of(context).textTheme.labelSmall,
-                              ),
-                            ),
-                          )
-                        : Image.network(
-                            thumbUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              color: Theme.of(context).colorScheme.surface,
-                              child: const Center(child: Icon(Icons.broken_image_outlined)),
-                            ),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: thumbUrl == null
+                              ? Container(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  child: Center(
+                                    child: Text(
+                                      item.type.toUpperCase(),
+                                      style: Theme.of(context).textTheme.labelSmall,
+                                    ),
+                                  ),
+                                )
+                              : Image.network(
+                                  thumbUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    color: Theme.of(context).colorScheme.surface,
+                                    child: const Center(child: Icon(Icons.broken_image_outlined)),
+                                  ),
+                                ),
+                        ),
+                      ),
+                      if (onTapChannel != null && item.grandparentThumb != null && auth.serverBaseUrl != null && auth.userToken != null)
+                        Positioned(
+                          left: 6,
+                          bottom: 6,
+                          child: ChannelBadge(
+                            imageUrl: '${auth.serverBaseUrl}${item.grandparentThumb}?X-Plex-Token=${auth.userToken}',
+                            onTap: onTapChannel!,
                           ),
+                        ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 8),

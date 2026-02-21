@@ -86,6 +86,20 @@ class PlexClient {
     return PlexMediaContainerParser.parseMetadata(res.data);
   }
 
+  /// For a show ratingKey, list episodes (leaves). Intended for a super-simple
+  /// show page with episodes in season order.
+  Future<List<PlexMediaItem>> showEpisodes({required String showRatingKey, int size = 500}) async {
+    final res = await _dio.get(
+      '/library/metadata/$showRatingKey/allLeaves',
+      queryParameters: {
+        'X-Plex-Container-Start': 0,
+        'X-Plex-Container-Size': size,
+      },
+    );
+
+    return PlexMediaContainerParser.parseMetadata(res.data);
+  }
+
   /// Random picks from a library.
   ///
   /// Plex supports `sort=random` on many endpoints.

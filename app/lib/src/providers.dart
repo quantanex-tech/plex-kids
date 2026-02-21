@@ -68,3 +68,17 @@ final randomPicksProvider = FutureProvider.family((ref, String libraryId) async 
   if (client == null) return const <PlexMediaItem>[];
   return client.randomPicks(libraryId: libraryId, size: 30);
 });
+
+final showEpisodesProvider = FutureProvider.family((ref, String showRatingKey) async {
+  final client = ref.watch(plexClientProvider);
+  if (client == null) return const <PlexMediaItem>[];
+  final eps = await client.showEpisodes(showRatingKey: showRatingKey, size: 500);
+  // Ensure oldest -> newest (season then episode).
+  final sorted = [...eps];
+  sorted.sort((a, b) {
+    final p = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
+    if (p != 0) return p;
+    return (a.index ?? 0).compareTo(b.index ?? 0);
+  });
+  return sorted;
+});

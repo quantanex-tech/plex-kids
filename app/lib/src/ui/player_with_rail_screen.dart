@@ -56,6 +56,20 @@ class _PlayerWithRailScreenState extends ConsumerState<PlayerWithRailScreen> {
     }
   }
 
+  Future<void> _togglePlayPause() async {
+    final ctl = _controller;
+    if (ctl == null) return;
+
+    if (ctl.value.isPlaying) {
+      await ctl.pause();
+    } else {
+      await ctl.play();
+    }
+
+    if (!mounted) return;
+    setState(() {});
+  }
+
   Future<void> _loadAndPlay(PlexMediaItem item) async {
     setState(() {
       _error = null;
@@ -124,9 +138,35 @@ class _PlayerWithRailScreenState extends ConsumerState<PlayerWithRailScreen> {
 
     final player = (ctl == null)
         ? const Center(child: CircularProgressIndicator())
-        : AspectRatio(
-            aspectRatio: ctl.value.aspectRatio,
-            child: VideoPlayer(ctl),
+        : Stack(
+            alignment: Alignment.center,
+            children: [
+              AspectRatio(
+                aspectRatio: ctl.value.aspectRatio,
+                child: VideoPlayer(ctl),
+              ),
+              if (_chromeVisible)
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () async {
+                    // When chrome is visible, a tap on the player toggles play/pause.
+                    // (Tap outside the player still toggles chrome.)
+                    await _togglePlayPause();
+                  },
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.10),
+                    child: AnimatedScale(
+                      duration: const Duration(milliseconds: 120),
+                      scale: 1.0,
+                      child: Icon(
+                        ctl.value.isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                        color: Colors.white.withValues(alpha: 0.92),
+                        size: 96,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           );
 
     return Scaffold(
@@ -157,22 +197,47 @@ class _PlayerWithRailScreenState extends ConsumerState<PlayerWithRailScreen> {
                     final fullHeight = constraints.maxHeight;
                     final playerHeight = _chromeVisible ? (fullHeight - railBlockHeight).clamp(180.0, fullHeight) : fullHeight;
 
-                    return Column(
+                    return Stack(
                       children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 220),
-                          curve: Curves.easeOut,
-                          height: playerHeight,
-                          width: double.infinity,
-                          child: Center(child: player),
+                        Column(
+                          children: [
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 220),
+                              curve: Curves.easeOut,
+                              height: playerHeight,
+                              width: double.infinity,
+                              child: Center(child: player),
+                            ),
+                            if (_chromeVisible) ...[
+                              const SizedBox(height: 10),
+                              _ContinueWatchingRail(
+                                asyncItems: filteredOnDeck,
+                                onPick: (it) => _loadAndPlay(it),
+                              ),
+                            ],
+                          ],
                         ),
-                        if (_chromeVisible) ...[
-                          const SizedBox(height: 10),
-                          _ContinueWatchingRail(
-                            asyncItems: filteredOnDeck,
-                            onPick: (it) => _loadAndPlay(it),
+                        if (_chromeVisible)
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: IgnorePointer(
+                              child: Container(
+                                height: railBlockHeight + 40,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.black.withValues(alpha: 0.0),
+                                      Colors.black.withValues(alpha: 0.55),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
-                        ],
                       ],
                     );
                   },

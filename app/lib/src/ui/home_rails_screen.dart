@@ -5,7 +5,7 @@ import '../plex/plex_media_models.dart';
 import '../plex/plex_models.dart';
 import '../providers.dart';
 import 'channel_badge.dart';
-import 'player_screen.dart';
+import 'player_with_rail_screen.dart';
 import 'show_screen.dart';
 
 class HomeRailsScreen extends ConsumerWidget {
@@ -167,7 +167,7 @@ class _RailSection extends StatelessWidget {
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => PlayerScreen(item: it),
+                          builder: (_) => PlayerWithRailScreen(initialItem: it),
                         ),
                       );
                     },

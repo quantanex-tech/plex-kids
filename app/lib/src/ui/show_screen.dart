@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers.dart';
-import 'player_screen.dart';
+import 'player_with_rail_screen.dart';
 
 class ShowScreen extends ConsumerWidget {
   final String showRatingKey;
@@ -36,7 +36,7 @@ class ShowScreen extends ConsumerWidget {
                 subtitle: Text('S${ep.parentIndex ?? 0} • E${ep.index ?? 0}'),
                 onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => PlayerScreen(item: ep)),
+                    MaterialPageRoute(builder: (_) => PlayerWithRailScreen(initialItem: ep)),
                   );
                 },
               );

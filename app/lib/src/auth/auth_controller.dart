@@ -87,8 +87,8 @@ class AuthController extends StateNotifier<AuthState> {
         homeUsers: users,
       );
     } catch (e) {
+      // Do not rethrow: keep the UI alive and show the error message.
       state = state.copyWith(isLoading: false, error: e.toString());
-      rethrow;
     }
   }
 
@@ -133,8 +133,8 @@ class AuthController extends StateNotifier<AuthState> {
         serverBaseUrl: best.baseUrl,
       );
     } catch (e) {
+      // Do not rethrow: keep the UI alive and show the error message.
       state = state.copyWith(isLoading: false, error: e.toString());
-      rethrow;
     }
   }
 

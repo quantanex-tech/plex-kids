@@ -61,20 +61,34 @@ class PlexPinAuth {
     Duration timeout = const Duration(minutes: 3),
   }) async {
     final deadline = DateTime.now().add(timeout);
+    var attempt = 0;
 
     while (DateTime.now().isBefore(deadline)) {
-      final res = await _dio.get(
-        '/api/v2/pins/${pin.id}',
-        options: Options(headers: {
-          'X-Plex-Client-Identifier': clientIdentifier,
-        }),
-      );
+      attempt += 1;
+      try {
+        final res = await _dio.get(
+          '/api/v2/pins/${pin.id}',
+          queryParameters: {
+            // Some Plex deployments appear to behave better when the client id is
+            // present as a query param as well as a header.
+            'X-Plex-Client-Identifier': clientIdentifier,
+          },
+          options: Options(headers: {
+            'X-Plex-Client-Identifier': clientIdentifier,
+          }),
+        );
 
-      final json = (res.data as Map).cast<String, dynamic>();
-      final token = (json['authToken'] ?? '').toString();
-      if (token.isNotEmpty) return token;
+        final json = (res.data as Map).cast<String, dynamic>();
+        final token = (json['authToken'] ?? '').toString();
+        if (token.isNotEmpty) return token;
+      } catch (_) {
+        // Treat transient network issues (e.g. connection abort) as retryable.
+        // We'll keep polling until overall timeout.
+      }
 
-      await Future.delayed(pollEvery);
+      // Light backoff to avoid hammering plex.tv.
+      final backoff = Duration(milliseconds: (pollEvery.inMilliseconds * (attempt < 5 ? 1 : 2)));
+      await Future.delayed(backoff);
     }
 
     throw TimeoutException('Plex login timed out.');

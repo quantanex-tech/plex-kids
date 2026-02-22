@@ -9,7 +9,15 @@ Future<void> main() async {
 
   // Load app/.env if present. We keep this purely for local dev so you can
   // validate Plex connectivity without committing secrets.
-  await dotenv.load(fileName: '.env', isOptional: true);
+  //
+  // On some setups an empty .env may exist; flutter_dotenv throws
+  // EmptyEnvFileError in that case. We intentionally ignore dotenv failures
+  // because the real path is Plex web auth.
+  try {
+    await dotenv.load(fileName: '.env', isOptional: true);
+  } catch (_) {
+    // ignore
+  }
 
   runApp(const PlexKidsRoot());
 }

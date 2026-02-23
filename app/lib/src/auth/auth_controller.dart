@@ -69,6 +69,8 @@ class AuthController extends StateNotifier<AuthState> {
 
       // 1) Create PIN + open browser
       final pin = await _pinAuth.createPin(clientIdentifier: clientIdentifier);
+      state = state.copyWith(linkCode: pin.code);
+
       final url = _pinAuth.buildAuthUrl(pin: pin, clientIdentifier: clientIdentifier);
       final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       if (!ok) throw StateError('Could not open browser for Plex login');
@@ -85,6 +87,7 @@ class AuthController extends StateNotifier<AuthState> {
         isLoading: false,
         accountToken: accountToken,
         homeUsers: users,
+        linkCode: null,
       );
     } catch (e) {
       // Do not rethrow: keep the UI alive and show the error message.

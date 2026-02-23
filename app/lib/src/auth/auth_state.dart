@@ -7,6 +7,9 @@ class AuthState {
   final String? accountToken;
   final String? userToken;
 
+  /// When signing in via device PIN flow, this is the code to enter on plex.tv/link.
+  final String? linkCode;
+
   /// Available Plex Home users (main + managed users).
   final List<PlexHomeUser> homeUsers;
 
@@ -19,6 +22,7 @@ class AuthState {
     this.error,
     this.accountToken,
     this.userToken,
+    this.linkCode,
     this.homeUsers = const [],
     this.serverName,
     this.serverMachineId,
@@ -32,6 +36,7 @@ class AuthState {
     String? error,
     String? accountToken,
     String? userToken,
+    String? linkCode,
     List<PlexHomeUser>? homeUsers,
     String? serverName,
     String? serverMachineId,
@@ -42,6 +47,7 @@ class AuthState {
       error: error,
       accountToken: accountToken ?? this.accountToken,
       userToken: userToken ?? this.userToken,
+      linkCode: linkCode ?? this.linkCode,
       homeUsers: homeUsers ?? this.homeUsers,
       serverName: serverName ?? this.serverName,
       serverMachineId: serverMachineId ?? this.serverMachineId,

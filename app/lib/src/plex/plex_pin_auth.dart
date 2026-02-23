@@ -42,16 +42,15 @@ class PlexPinAuth {
   }
 
   /// Open this URL in an external browser.
+  ///
+  /// We intentionally use the classic link flow. The app.plex.tv hash route has
+  /// proven brittle (dead-end "unable to complete this request" on some setups).
   String buildAuthUrl({required PlexPin pin, required String clientIdentifier}) {
-    // app.plex.tv auth page consumes the pin code.
-    // This mirrors how many Plex apps do login.
     final code = Uri.encodeComponent(pin.code);
-    final clientId = Uri.encodeComponent(clientIdentifier);
+    // clientIdentifier is unused in this URL but kept for API symmetry.
+    // (kept to allow future clientId binding if Plex requires it)
 
-    return 'https://app.plex.tv/auth#?'
-        'clientID=$clientId'
-        '&code=$code'
-        '&context%5Bdevice%5D%5Bproduct%5D=Plex%20Kids';
+    return 'https://plex.tv/link?code=$code';
   }
 
   Future<String> pollForAuthToken({

@@ -61,7 +61,8 @@ class _AuthView extends ConsumerWidget {
           children: [
             const Text(
               'Plex Kids (Spike)\n\n'
-              'This will open Plex login in your browser, then the app will poll until login completes.',
+              'This will open Plex login in your browser.\n'
+              'If it does not auto-complete, go to plex.tv/link and enter the code shown below.',
             ),
             const SizedBox(height: 12),
             if (state.error != null) ...[
@@ -76,6 +77,17 @@ class _AuthView extends ConsumerWidget {
                     },
               child: state.isLoading ? const Text('Working...') : const Text('Sign in to Plex'),
             ),
+            if (state.isLoading && state.linkCode != null) ...[
+              const SizedBox(height: 12),
+              Text('Link code', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 6),
+              SelectableText(
+                state.linkCode!,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(letterSpacing: 2),
+              ),
+              const SizedBox(height: 6),
+              const SelectableText('https://plex.tv/link'),
+            ],
             const SizedBox(height: 16),
             if (state.accountToken != null && state.homeUsers.isNotEmpty) ...[
               Text('Choose profile', style: Theme.of(context).textTheme.titleMedium),

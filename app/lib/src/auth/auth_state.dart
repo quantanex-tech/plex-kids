@@ -4,6 +4,10 @@ class AuthState {
   final bool isLoading;
   final String? error;
 
+  /// If true, a link code has been generated and we are waiting for the user
+  /// to link the device + start/continue polling.
+  final bool awaitingLink;
+
   final String? accountToken;
   final String? userToken;
 
@@ -20,6 +24,7 @@ class AuthState {
   const AuthState({
     required this.isLoading,
     this.error,
+    this.awaitingLink = false,
     this.accountToken,
     this.userToken,
     this.linkCode,
@@ -29,11 +34,12 @@ class AuthState {
     this.serverBaseUrl,
   });
 
-  factory AuthState.initial() => const AuthState(isLoading: false);
+  factory AuthState.initial() => const AuthState(isLoading: false, awaitingLink: false);
 
   AuthState copyWith({
     bool? isLoading,
     String? error,
+    bool? awaitingLink,
     String? accountToken,
     String? userToken,
     String? linkCode,
@@ -45,6 +51,7 @@ class AuthState {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      awaitingLink: awaitingLink ?? this.awaitingLink,
       accountToken: accountToken ?? this.accountToken,
       userToken: userToken ?? this.userToken,
       linkCode: linkCode ?? this.linkCode,

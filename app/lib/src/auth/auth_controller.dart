@@ -7,6 +7,7 @@ import '../plex/plex_pin_auth.dart';
 import '../plex/plex_resources.dart';
 import '../storage/secure_store.dart';
 import 'auth_state.dart';
+import 'pending_pin.dart';
 
 class AuthController extends StateNotifier<AuthState> {
   final SecureStore _store;
@@ -17,6 +18,7 @@ class AuthController extends StateNotifier<AuthState> {
   final PlexConnectionSelector _selector;
 
   String? _clientIdentifier;
+  PendingPin? _pendingPin;
 
   AuthController({
     required SecureStore store,
@@ -61,37 +63,68 @@ class AuthController extends StateNotifier<AuthState> {
     );
   }
 
-  Future<void> signIn() async {
-    state = state.copyWith(isLoading: true, error: null, linkCode: null);
+  /// Step 1: Generate a link code (do not open browser, do not poll).
+  Future<void> generateLinkCode() async {
+    if (state.isLoading) return;
+
+    state = state.copyWith(isLoading: true, error: null, linkCode: null, awaitingLink: false);
 
     try {
       final clientIdentifier = await _ensureClientIdentifier();
-
-      // 1) Create PIN (show code to user)
       final pin = await _pinAuth.createPin(clientIdentifier: clientIdentifier);
-      state = state.copyWith(linkCode: pin.code.toUpperCase());
 
-      // 2) Open browser to link page (user enters code)
-      final url = _pinAuth.buildAuthUrl(pin: pin, clientIdentifier: clientIdentifier);
-      final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-      if (!ok) throw StateError('Could not open browser for Plex login');
+      _pendingPin = PendingPin(pin: pin, clientIdentifier: clientIdentifier);
 
-      // 3) Poll for account token
-      final accountToken = await _pinAuth.pollForAuthToken(pin: pin, clientIdentifier: clientIdentifier);
+      state = state.copyWith(
+        isLoading: false,
+        linkCode: pin.code.toUpperCase(),
+        awaitingLink: true,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  /// Step 2: Open plex.tv/link in the browser.
+  Future<void> openLinkPage() async {
+    final pending = _pendingPin;
+    if (pending == null) return;
+
+    final url = _pinAuth.buildAuthUrl(pin: pending.pin, clientIdentifier: pending.clientIdentifier);
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
+
+  /// Step 3: Poll until the account token is available.
+  Future<void> startPollingForAccountToken() async {
+    final pending = _pendingPin;
+    if (pending == null) {
+      state = state.copyWith(error: 'No link code. Generate a new code first.');
+      return;
+    }
+
+    if (state.isLoading) return;
+
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final accountToken = await _pinAuth.pollForAuthToken(
+        pin: pending.pin,
+        clientIdentifier: pending.clientIdentifier,
+      );
       await _store.writeAccountToken(accountToken);
 
-      // 3) List home users (main + managed users)
       final users = await _homeUsers.listUsers(accountToken: accountToken);
       if (users.isEmpty) throw StateError('No Plex Home users returned.');
 
+      _pendingPin = null;
       state = state.copyWith(
         isLoading: false,
         accountToken: accountToken,
         homeUsers: users,
         linkCode: null,
+        awaitingLink: false,
       );
     } catch (e) {
-      // Do not rethrow: keep the UI alive and show the error message.
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -143,6 +176,7 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<void> signOut() async {
+    _pendingPin = null;
     await _store.clearAll();
     state = AuthState.initial();
   }

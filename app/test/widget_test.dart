@@ -13,6 +13,6 @@ void main() {
   testWidgets('App renders sign-in screen', (WidgetTester tester) async {
     await tester.pumpWidget(const PlexKidsRoot());
     expect(find.text('Sign in'), findsOneWidget);
-    expect(find.text('Sign in to Plex'), findsOneWidget);
+    expect(find.text('Generate link code'), findsOneWidget);
   });
 }

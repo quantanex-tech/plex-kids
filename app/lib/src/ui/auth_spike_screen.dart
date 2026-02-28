@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../auth/auth_state.dart';
@@ -61,8 +62,7 @@ class _AuthView extends ConsumerWidget {
           children: [
             const Text(
               'Plex Kids (Spike)\n\n'
-              'This will open Plex login in your browser.\n'
-              'If it does not auto-complete, go to plex.tv/link and enter the code shown below.',
+              'Device link flow: generate a 4-character code, enter it on plex.tv/link, then continue.',
             ),
             const SizedBox(height: 12),
             if (state.error != null) ...[
@@ -73,24 +73,56 @@ class _AuthView extends ConsumerWidget {
               onPressed: state.isLoading
                   ? null
                   : () async {
-                      await ctl.signIn();
+                      await ctl.generateLinkCode();
                     },
-              child: state.isLoading ? const Text('Working...') : const Text('Sign in to Plex'),
+              child: state.isLoading ? const Text('Working...') : const Text('Generate link code'),
             ),
-            if (state.isLoading && state.linkCode != null) ...[
+            if (state.awaitingLink && state.linkCode != null) ...[
               const SizedBox(height: 12),
               Text('Link code', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 6),
               SelectableText(
                 state.linkCode!,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(letterSpacing: 4),
+                style: Theme.of(context).textTheme.headlineLarge?.copyWith(letterSpacing: 6),
               ),
-              const SizedBox(height: 6),
-              const SelectableText('Go to: https://plex.tv/link'),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      await Clipboard.setData(ClipboardData(text: state.linkCode!));
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Code copied')));
+                      }
+                    },
+                    icon: const Icon(Icons.copy),
+                    label: const Text('Copy code'),
+                  ),
+                  FilledButton.icon(
+                    onPressed: () async {
+                      await ctl.openLinkPage();
+                    },
+                    icon: const Icon(Icons.open_in_browser),
+                    label: const Text('Open plex.tv/link'),
+                  ),
+                  FilledButton.icon(
+                    onPressed: state.isLoading
+                        ? null
+                        : () async {
+                            await ctl.startPollingForAccountToken();
+                          },
+                    icon: const Icon(Icons.check_circle_outline),
+                    label: const Text("I've linked it"),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
               Text(
-                'Tip: copy the code above, then enter it in the browser.\n'
-                'If you hit "code expired", press Clear session and try again.',
+                '1) Copy the code\n'
+                '2) Open plex.tv/link in your browser and enter it\n'
+                '3) Tap "I\'ve linked it" to continue',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],

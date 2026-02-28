@@ -64,36 +64,71 @@ class _ProfileSwitcherSheetState extends ConsumerState<ProfileSwitcherSheet> {
                 const SizedBox(height: 8),
               ],
               Flexible(
-                child: ListView.separated(
+                child: ListView(
                   shrinkWrap: true,
-                  itemCount: users.length,
-                  separatorBuilder: (context, index) => const Divider(height: 1),
-                  itemBuilder: (context, i) {
-                    final u = users[i];
-                    final selected = auth.activeUserId == u.id;
+                  children: [
+                    ...List.generate(users.length, (i) {
+                      final u = users[i];
+                      final selected = auth.activeUserId == u.id;
 
-                    return ListTile(
-                      leading: CircleAvatar(
-                        child: Text(u.title.isNotEmpty ? u.title.characters.first.toUpperCase() : '?'),
-                      ),
-                      title: Text(u.title),
-                      subtitle: (u.isManaged || u.isProtected)
-                          ? Text([
-                              if (u.isManaged) 'managed',
-                              if (u.isProtected) 'PIN',
-                            ].join(' • '))
-                          : null,
-                      trailing: selected ? const Icon(Icons.check) : const Icon(Icons.chevron_right),
+                      return Column(
+                        children: [
+                          ListTile(
+                            leading: CircleAvatar(
+                              child: Text(u.title.isNotEmpty ? u.title.characters.first.toUpperCase() : '?'),
+                            ),
+                            title: Text(u.title),
+                            subtitle: (u.isManaged || u.isProtected)
+                                ? Text([
+                                    if (u.isManaged) 'managed',
+                                    if (u.isProtected) 'PIN',
+                                  ].join(' • '))
+                                : null,
+                            trailing: selected ? const Icon(Icons.check) : const Icon(Icons.chevron_right),
+                            onTap: () async {
+                              await ref.read(authControllerProvider.notifier).selectHomeUser(userId: u.id);
+                              // Refresh app data for the new user.
+                              ref.invalidate(onDeckProvider);
+                              ref.invalidate(plexLibrariesProvider);
+                              ref.invalidate(selectedLibraryProvider);
+                              if (context.mounted) Navigator.pop(context);
+                            },
+                          ),
+                          const Divider(height: 1),
+                        ],
+                      );
+                    }),
+                    const SizedBox(height: 8),
+                    ListTile(
+                      leading: const Icon(Icons.logout),
+                      title: const Text('Log out & re-link Plex'),
+                      subtitle: const Text('Clears tokens and returns to link screen'),
                       onTap: () async {
-                        await ref.read(authControllerProvider.notifier).selectHomeUser(userId: u.id);
-                        // Refresh app data for the new user.
+                        final ok = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Log out?'),
+                                content: const Text('This will clear the Plex session and require re-linking.'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                                  FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Log out')),
+                                ],
+                              ),
+                            ) ??
+                            false;
+
+                        if (!ok) return;
+
+                        await ref.read(authControllerProvider.notifier).signOut();
+                        // Clear cached app data.
                         ref.invalidate(onDeckProvider);
                         ref.invalidate(plexLibrariesProvider);
                         ref.invalidate(selectedLibraryProvider);
+
                         if (context.mounted) Navigator.pop(context);
                       },
-                    );
-                  },
+                    ),
+                  ],
                 ),
               ),
             ],

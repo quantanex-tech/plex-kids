@@ -27,7 +27,7 @@ class HomeRailsScreen extends ConsumerWidget {
           padding: const EdgeInsets.only(left: 8),
           child: IconButton(
             tooltip: 'Switch profile',
-            onPressed: auth.homeUsers.isEmpty
+            onPressed: (auth.accountToken == null || auth.accountToken!.isEmpty)
                 ? null
                 : () {
                     showModalBottomSheet(

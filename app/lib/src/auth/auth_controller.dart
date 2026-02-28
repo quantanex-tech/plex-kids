@@ -61,6 +61,35 @@ class AuthController extends StateNotifier<AuthState> {
       serverBaseUrl: baseUrl,
       serverMachineId: machineId,
     );
+
+    // Best-effort: load home users so profile switcher works after app restart.
+    if (account != null && account.isNotEmpty) {
+      await loadHomeUsers();
+    }
+  }
+
+  Future<void> loadHomeUsers() async {
+    final accountToken = state.accountToken;
+    if (accountToken == null || accountToken.isEmpty) return;
+
+    try {
+      final users = await _homeUsers.listUsers(accountToken: accountToken);
+      if (users.isEmpty) return;
+
+      // Pick a reasonable active user if we don't have one.
+      final activeId = state.activeUserId ?? users.first.id;
+      final active = users.where((u) => u.id == activeId).firstOrNull ?? users.first;
+
+      state = state.copyWith(
+        homeUsers: users,
+        activeUserId: active.id,
+        activeUserTitle: active.title,
+        activeUserThumb: active.thumb,
+      );
+    } catch (e) {
+      // Don't block app startup for this.
+      state = state.copyWith(error: e.toString());
+    }
   }
 
   /// Step 1: Generate a link code (do not open browser, do not poll).

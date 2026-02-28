@@ -3,11 +3,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers.dart';
 
-class ProfileSwitcherSheet extends ConsumerWidget {
+class ProfileSwitcherSheet extends ConsumerStatefulWidget {
   const ProfileSwitcherSheet({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileSwitcherSheet> createState() => _ProfileSwitcherSheetState();
+}
+
+class _ProfileSwitcherSheetState extends ConsumerState<ProfileSwitcherSheet> {
+  @override
+  void initState() {
+    super.initState();
+    // Load users if we don't have them (e.g. after app restart).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = ref.read(authControllerProvider);
+      if (auth.homeUsers.isEmpty) {
+        ref.read(authControllerProvider.notifier).loadHomeUsers();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
     final users = auth.homeUsers;
 
@@ -30,46 +47,56 @@ class ProfileSwitcherSheet extends ConsumerWidget {
                 ),
               ],
             ),
-            if (hasUnprotected) ...[
+            if (users.isEmpty) ...[
+              const SizedBox(height: 12),
+              const Center(child: CircularProgressIndicator()),
+              const SizedBox(height: 12),
               Text(
-                'Some profiles are not PIN protected. Consider adding a PIN in Plex Home settings.',
+                'Loading profiles…',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
               ),
-              const SizedBox(height: 8),
-            ],
-            Flexible(
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: users.length,
-                separatorBuilder: (context, index) => const Divider(height: 1),
-                itemBuilder: (context, i) {
-                  final u = users[i];
-                  final selected = auth.activeUserId == u.id;
+            ] else ...[
+              if (hasUnprotected) ...[
+                Text(
+                  'Some profiles are not PIN protected. Consider adding a PIN in Plex Home settings.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 8),
+              ],
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: users.length,
+                  separatorBuilder: (context, index) => const Divider(height: 1),
+                  itemBuilder: (context, i) {
+                    final u = users[i];
+                    final selected = auth.activeUserId == u.id;
 
-                  return ListTile(
-                    leading: CircleAvatar(
-                      child: Text(u.title.isNotEmpty ? u.title.characters.first.toUpperCase() : '?'),
-                    ),
-                    title: Text(u.title),
-                    subtitle: (u.isManaged || u.isProtected)
-                        ? Text([
-                            if (u.isManaged) 'managed',
-                            if (u.isProtected) 'PIN',
-                          ].join(' • '))
-                        : null,
-                    trailing: selected ? const Icon(Icons.check) : const Icon(Icons.chevron_right),
-                    onTap: () async {
-                      await ref.read(authControllerProvider.notifier).selectHomeUser(userId: u.id);
-                      // Refresh app data for the new user.
-                      ref.invalidate(onDeckProvider);
-                      ref.invalidate(plexLibrariesProvider);
-                      ref.invalidate(selectedLibraryProvider);
-                      if (context.mounted) Navigator.pop(context);
-                    },
-                  );
-                },
+                    return ListTile(
+                      leading: CircleAvatar(
+                        child: Text(u.title.isNotEmpty ? u.title.characters.first.toUpperCase() : '?'),
+                      ),
+                      title: Text(u.title),
+                      subtitle: (u.isManaged || u.isProtected)
+                          ? Text([
+                              if (u.isManaged) 'managed',
+                              if (u.isProtected) 'PIN',
+                            ].join(' • '))
+                          : null,
+                      trailing: selected ? const Icon(Icons.check) : const Icon(Icons.chevron_right),
+                      onTap: () async {
+                        await ref.read(authControllerProvider.notifier).selectHomeUser(userId: u.id);
+                        // Refresh app data for the new user.
+                        ref.invalidate(onDeckProvider);
+                        ref.invalidate(plexLibrariesProvider);
+                        ref.invalidate(selectedLibraryProvider);
+                        if (context.mounted) Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),

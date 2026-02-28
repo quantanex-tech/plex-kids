@@ -138,12 +138,18 @@ class AuthController extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // 1) Switch to selected user (managed user may require PIN)
-      final userToken = await _homeUsers.switchUser(
-        accountToken: accountToken,
-        userId: userId,
-        pin: pin,
-      );
+      // 1) Switch to selected user.
+      // For the main (non-managed) account user, we do NOT need to switch; the
+      // account token already represents that user.
+      final selected = state.homeUsers.where((u) => u.id == userId).firstOrNull;
+      final userToken = (selected != null && !selected.isManaged)
+          ? accountToken
+          : await _homeUsers.switchUser(
+              accountToken: accountToken,
+              userId: userId,
+              pin: pin,
+            );
+
       await _store.writeUserToken(userToken);
 
       // 2) Discover servers (assume one server for MVP)
@@ -182,4 +188,6 @@ class AuthController extends StateNotifier<AuthState> {
   }
 }
 
-// (removed unused helper)
+extension _FirstOrNull<T> on Iterable<T> {
+  T? get firstOrNull => isEmpty ? null : first;
+}

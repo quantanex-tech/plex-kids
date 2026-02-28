@@ -67,8 +67,8 @@ class PlexHomeUsersApi {
     String? pin,
   }) async {
     // XML: POST https://plex.tv/api/home/users/{id}/switch
-    // Some Plex setups expect the PIN as a header; others accept it as a query param.
-    // We send both when provided.
+    // Some Plex setups expect tokens/pins in headers rather than query params.
+    // We send both where possible.
     final res = await _dio.post(
       '/api/home/users/$userId/switch',
       queryParameters: {
@@ -77,6 +77,7 @@ class PlexHomeUsersApi {
       },
       options: Options(
         headers: {
+          'X-Plex-Token': accountToken,
           if (pin != null && pin.isNotEmpty) 'X-Plex-PIN': pin,
         },
       ),
@@ -92,13 +93,22 @@ class PlexHomeUsersApi {
   }
 
   static String describeSwitchError(Object e) {
-    // Dio wraps non-2xx responses; 422 is commonly returned when a PIN is required
-    // or incorrect for a protected managed user.
-    final msg = e.toString();
-    if (msg.contains('status code of 422')) {
-      return 'Plex refused the profile switch (422). This usually means the profile is PIN-protected and the PIN was missing/incorrect.';
+    if (e is DioException) {
+      final status = e.response?.statusCode;
+      final body = e.response?.data;
+
+      if (status == 401) {
+        return 'Plex refused the request (401). The account token may be invalid/expired. Try Clear session and sign in again.';
+      }
+
+      if (status == 422) {
+        return 'Plex refused the profile switch (422). This can happen if the profile requires a PIN, or if plex.tv did not accept the switch request for this account.\n\nDetails: $body';
+      }
+
+      return 'Plex error (HTTP $status): ${e.message}\n\nDetails: $body';
     }
-    return msg;
+
+    return e.toString();
   }
 }
 

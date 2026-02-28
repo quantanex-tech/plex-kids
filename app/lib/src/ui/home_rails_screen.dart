@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'profile_switcher_sheet.dart';
+import 'profile_and_library_screen.dart';
 
 import '../plex/plex_media_models.dart';
-import '../plex/plex_models.dart';
 import '../providers.dart';
 import 'channel_badge.dart';
 import 'player_with_rail_screen.dart';
@@ -26,15 +25,12 @@ class HomeRailsScreen extends ConsumerWidget {
         leading: Padding(
           padding: const EdgeInsets.only(left: 8),
           child: IconButton(
-            tooltip: 'Switch profile',
+            tooltip: 'Profiles & libraries',
             onPressed: (auth.accountToken == null || auth.accountToken!.isEmpty)
                 ? null
                 : () {
-                    showModalBottomSheet(
-                      context: context,
-                      showDragHandle: true,
-                      isScrollControlled: true,
-                      builder: (_) => const ProfileSwitcherSheet(),
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ProfileAndLibraryScreen()),
                     );
                   },
             icon: CircleAvatar(
@@ -92,8 +88,11 @@ class HomeRailsScreen extends ConsumerWidget {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _LibraryPicker(libraries: libs, selected: lib),
-                const SizedBox(height: 16),
+                Text(
+                  'Library: ${lib.title}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade700),
+                ),
+                const SizedBox(height: 8),
 
                 _RailSection(
                   title: 'Continue Watching',
@@ -117,41 +116,6 @@ class HomeRailsScreen extends ConsumerWidget {
           );
         },
       ),
-    );
-  }
-}
-
-class _LibraryPicker extends ConsumerWidget {
-  final List<PlexLibrary> libraries;
-  final PlexLibrary selected;
-
-  const _LibraryPicker({required this.libraries, required this.selected});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Row(
-      children: [
-        Expanded(
-          child: DropdownButtonFormField<String>(
-            initialValue: selected.id,
-            decoration: const InputDecoration(
-              labelText: 'Library',
-              border: OutlineInputBorder(),
-            ),
-            items: [
-              for (final l in libraries)
-                DropdownMenuItem(
-                  value: l.id,
-                  child: Text('${l.title} (${l.type})'),
-                ),
-            ],
-            onChanged: (id) {
-              final lib = libraries.firstWhere((l) => l.id == id);
-              ref.read(selectedLibraryProvider.notifier).state = lib;
-            },
-          ),
-        ),
-      ],
     );
   }
 }
@@ -277,7 +241,10 @@ class _MediaCard extends ConsumerWidget {
                                 ),
                         ),
                       ),
-                      if (onTapChannel != null && item.grandparentThumb != null && auth.serverBaseUrl != null && auth.userToken != null)
+                      if (onTapChannel != null &&
+                          item.grandparentThumb != null &&
+                          auth.serverBaseUrl != null &&
+                          auth.userToken != null)
                         Positioned(
                           left: 6,
                           bottom: 6,

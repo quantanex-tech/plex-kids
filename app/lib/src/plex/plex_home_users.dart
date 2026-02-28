@@ -59,13 +59,18 @@ class PlexHomeUsersApi {
     return users;
   }
 
-  Future<List<PlexHomeUser>> listUsers({required String accountToken}) async {
+  Future<List<PlexHomeUser>> listUsers({required String accountToken, String? clientIdentifier}) async {
     // XML: https://plex.tv/api/home/users
     final res = await _dio.get(
       '/api/home/users',
       queryParameters: {
         'X-Plex-Token': accountToken,
+        if (clientIdentifier != null && clientIdentifier.isNotEmpty) 'X-Plex-Client-Identifier': clientIdentifier,
       },
+      options: Options(headers: {
+        'X-Plex-Token': accountToken,
+        if (clientIdentifier != null && clientIdentifier.isNotEmpty) 'X-Plex-Client-Identifier': clientIdentifier,
+      }),
     );
 
     return parseUsersXml(res.data as String);
@@ -76,6 +81,7 @@ class PlexHomeUsersApi {
     required String accountToken,
     required String userId,
     String? pin,
+    String? clientIdentifier,
   }) async {
     // XML: POST https://plex.tv/api/home/users/{id}/switch
     // Some Plex setups expect tokens/pins in headers rather than query params.
@@ -85,11 +91,13 @@ class PlexHomeUsersApi {
       queryParameters: {
         'X-Plex-Token': accountToken,
         if (pin != null && pin.isNotEmpty) 'pin': pin,
+        if (clientIdentifier != null && clientIdentifier.isNotEmpty) 'X-Plex-Client-Identifier': clientIdentifier,
       },
       options: Options(
         headers: {
           'X-Plex-Token': accountToken,
           if (pin != null && pin.isNotEmpty) 'X-Plex-PIN': pin,
+          if (clientIdentifier != null && clientIdentifier.isNotEmpty) 'X-Plex-Client-Identifier': clientIdentifier,
         },
       ),
     );

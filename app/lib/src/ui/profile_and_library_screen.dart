@@ -47,6 +47,13 @@ class _ProfileAndLibraryScreenState extends ConsumerState<ProfileAndLibraryScree
             title: Text(auth.activeUserTitle ?? 'Unknown'),
             subtitle: Text(auth.serverName ?? ''),
           ),
+          if (auth.activeTokenUsername != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Token identity: ${auth.activeTokenUsername}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
+            ),
+          ],
           const SizedBox(height: 16),
 
           Text('Switch profile', style: Theme.of(context).textTheme.titleMedium),
@@ -66,12 +73,11 @@ class _ProfileAndLibraryScreenState extends ConsumerState<ProfileAndLibraryScree
               return ListTile(
                 leading: CircleAvatar(child: Text(u.title.characters.first.toUpperCase())),
                 title: Text(u.title),
-                subtitle: (u.isManaged || u.isProtected)
-                    ? Text([
-                        if (u.isManaged) 'managed',
-                        if (u.isProtected) 'PIN',
-                      ].join(' • '))
-                    : null,
+                subtitle: Text([
+                  'id=${u.id}',
+                  if (u.isManaged) 'managed',
+                  if (u.isProtected) 'PIN',
+                ].join(' • ')),
                 trailing: selected ? const Icon(Icons.check) : const Icon(Icons.chevron_right),
                 onTap: auth.isLoading
                     ? null

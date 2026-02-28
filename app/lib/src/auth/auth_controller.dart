@@ -5,6 +5,7 @@ import '../connection/connection_selector.dart';
 import '../plex/plex_home_users.dart';
 import '../plex/plex_pin_auth.dart';
 import '../plex/plex_resources.dart';
+import '../plex/plex_tv_user.dart';
 import '../storage/secure_store.dart';
 import 'auth_state.dart';
 import 'pending_pin.dart';
@@ -16,6 +17,7 @@ class AuthController extends StateNotifier<AuthState> {
   final PlexHomeUsersApi _homeUsers;
   final PlexResourcesApi _resources;
   final PlexConnectionSelector _selector;
+  final PlexTvApi _plexTv;
 
   String? _clientIdentifier;
   PendingPin? _pendingPin;
@@ -27,6 +29,7 @@ class AuthController extends StateNotifier<AuthState> {
         _homeUsers = PlexHomeUsersApi(),
         _resources = PlexResourcesApi(),
         _selector = PlexConnectionSelector(),
+        _plexTv = PlexTvApi(),
         super(AuthState.initial());
 
   Future<String> _ensureClientIdentifier() async {
@@ -73,7 +76,10 @@ class AuthController extends StateNotifier<AuthState> {
     if (accountToken == null || accountToken.isEmpty) return;
 
     try {
-      final users = await _homeUsers.listUsers(accountToken: accountToken);
+      final users = await _homeUsers.listUsers(
+        accountToken: accountToken,
+        clientIdentifier: await _ensureClientIdentifier(),
+      );
       if (users.isEmpty) return;
 
       // Pick a reasonable active user if we don't have one.
@@ -142,10 +148,15 @@ class AuthController extends StateNotifier<AuthState> {
       );
       await _store.writeAccountToken(accountToken);
 
-      final users = await _homeUsers.listUsers(accountToken: accountToken);
+      final users = await _homeUsers.listUsers(
+        accountToken: accountToken,
+        clientIdentifier: pending.clientIdentifier,
+      );
       if (users.isEmpty) throw StateError('No Plex Home users returned.');
 
       _pendingPin = null;
+      final tokenUser = await _plexTv.getUser(token: accountToken);
+
       state = state.copyWith(
         isLoading: false,
         accountToken: accountToken,
@@ -157,6 +168,7 @@ class AuthController extends StateNotifier<AuthState> {
         activeUserId: users.first.id,
         activeUserTitle: users.first.title,
         activeUserThumb: users.first.thumb,
+        activeTokenUsername: tokenUser.username ?? tokenUser.email ?? tokenUser.title,
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -184,6 +196,7 @@ class AuthController extends StateNotifier<AuthState> {
               accountToken: accountToken,
               userId: userId,
               pin: pin,
+              clientIdentifier: await _ensureClientIdentifier(),
             );
 
       await _store.writeUserToken(userToken);
@@ -204,12 +217,15 @@ class AuthController extends StateNotifier<AuthState> {
 
       await _store.writeServerSelection(machineId: server.machineIdentifier, baseUrl: best.baseUrl);
 
+      final tokenUser = await _plexTv.getUser(token: userToken);
+
       state = state.copyWith(
         isLoading: false,
         userToken: userToken,
         activeUserId: selected.id,
         activeUserTitle: selected.title,
         activeUserThumb: selected.thumb,
+        activeTokenUsername: tokenUser.username ?? tokenUser.email ?? tokenUser.title,
         serverName: server.name,
         serverMachineId: server.machineIdentifier,
         serverBaseUrl: best.baseUrl,

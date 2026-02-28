@@ -15,6 +15,9 @@ class AuthState {
   final String? activeUserTitle;
   final String? activeUserThumb;
 
+  /// Debug/verification: identity returned by plex.tv for the active token.
+  final String? activeTokenUsername;
+
   /// When signing in via device PIN flow, this is the code to enter on plex.tv/link.
   final String? linkCode;
 
@@ -34,6 +37,7 @@ class AuthState {
     this.activeUserId,
     this.activeUserTitle,
     this.activeUserThumb,
+    this.activeTokenUsername,
     this.linkCode,
     this.homeUsers = const [],
     this.serverName,
@@ -52,6 +56,7 @@ class AuthState {
     String? activeUserId,
     String? activeUserTitle,
     String? activeUserThumb,
+    String? activeTokenUsername,
     String? linkCode,
     List<PlexHomeUser>? homeUsers,
     String? serverName,
@@ -67,6 +72,7 @@ class AuthState {
       activeUserId: activeUserId ?? this.activeUserId,
       activeUserTitle: activeUserTitle ?? this.activeUserTitle,
       activeUserThumb: activeUserThumb ?? this.activeUserThumb,
+      activeTokenUsername: activeTokenUsername ?? this.activeTokenUsername,
       linkCode: linkCode ?? this.linkCode,
       homeUsers: homeUsers ?? this.homeUsers,
       serverName: serverName ?? this.serverName,

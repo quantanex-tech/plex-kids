@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'profile_switcher_sheet.dart';
+
 import '../plex/plex_media_models.dart';
 import '../plex/plex_models.dart';
 import '../providers.dart';
@@ -16,9 +18,33 @@ class HomeRailsScreen extends ConsumerWidget {
     final libsAsync = ref.watch(plexLibrariesProvider);
     final onDeckAsync = ref.watch(onDeckProvider);
     final selected = ref.watch(selectedLibraryProvider);
+    final auth = ref.watch(authControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Plex Kids')),
+      appBar: AppBar(
+        title: const Text('Plex Kids'),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: IconButton(
+            tooltip: 'Switch profile',
+            onPressed: auth.homeUsers.isEmpty
+                ? null
+                : () {
+                    showModalBottomSheet(
+                      context: context,
+                      showDragHandle: true,
+                      isScrollControlled: true,
+                      builder: (_) => const ProfileSwitcherSheet(),
+                    );
+                  },
+            icon: CircleAvatar(
+              child: Text(
+                (auth.activeUserTitle ?? 'U').characters.first.toUpperCase(),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: libsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, st) => SingleChildScrollView(child: Text('Error: $e\n\n$st')),
@@ -155,7 +181,7 @@ class _RailSection extends StatelessWidget {
             }
 
             return SizedBox(
-              height: 150,
+              height: 190,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: items.length,

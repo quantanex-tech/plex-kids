@@ -6,12 +6,14 @@ class PlexHomeUser {
   final String title;
   final bool isManaged;
   final bool isProtected;
+  final String? thumb;
 
   const PlexHomeUser({
     required this.id,
     required this.title,
     required this.isManaged,
     required this.isProtected,
+    this.thumb,
   });
 }
 
@@ -40,9 +42,18 @@ class PlexHomeUsersApi {
       final title = u.getAttribute('title') ?? '';
       final managed = (u.getAttribute('managed') ?? '0') == '1';
       final protected = (u.getAttribute('protected') ?? '0') == '1';
+      final thumb = (u.getAttribute('thumb') ?? '').trim();
 
       if (id.isEmpty || title.isEmpty) continue;
-      users.add(PlexHomeUser(id: id, title: title, isManaged: managed, isProtected: protected));
+      users.add(
+        PlexHomeUser(
+          id: id,
+          title: title,
+          isManaged: managed,
+          isProtected: protected,
+          thumb: thumb.isEmpty ? null : thumb,
+        ),
+      );
     }
 
     return users;

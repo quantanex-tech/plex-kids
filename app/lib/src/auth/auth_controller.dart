@@ -123,6 +123,11 @@ class AuthController extends StateNotifier<AuthState> {
         homeUsers: users,
         linkCode: null,
         awaitingLink: false,
+        // Default to the first user (usually the main account) until a profile
+        // is explicitly selected.
+        activeUserId: users.first.id,
+        activeUserTitle: users.first.title,
+        activeUserThumb: users.first.thumb,
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -142,7 +147,9 @@ class AuthController extends StateNotifier<AuthState> {
       // For the main (non-managed) account user, we do NOT need to switch; the
       // account token already represents that user.
       final selected = state.homeUsers.where((u) => u.id == userId).firstOrNull;
-      final userToken = (selected != null && !selected.isManaged)
+      if (selected == null) throw StateError('Unknown user');
+
+      final userToken = !selected.isManaged
           ? accountToken
           : await _homeUsers.switchUser(
               accountToken: accountToken,
@@ -171,6 +178,9 @@ class AuthController extends StateNotifier<AuthState> {
       state = state.copyWith(
         isLoading: false,
         userToken: userToken,
+        activeUserId: selected.id,
+        activeUserTitle: selected.title,
+        activeUserThumb: selected.thumb,
         serverName: server.name,
         serverMachineId: server.machineIdentifier,
         serverBaseUrl: best.baseUrl,

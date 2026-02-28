@@ -11,6 +11,10 @@ class AuthState {
   final String? accountToken;
   final String? userToken;
 
+  final String? activeUserId;
+  final String? activeUserTitle;
+  final String? activeUserThumb;
+
   /// When signing in via device PIN flow, this is the code to enter on plex.tv/link.
   final String? linkCode;
 
@@ -27,6 +31,9 @@ class AuthState {
     this.awaitingLink = false,
     this.accountToken,
     this.userToken,
+    this.activeUserId,
+    this.activeUserTitle,
+    this.activeUserThumb,
     this.linkCode,
     this.homeUsers = const [],
     this.serverName,
@@ -42,6 +49,9 @@ class AuthState {
     bool? awaitingLink,
     String? accountToken,
     String? userToken,
+    String? activeUserId,
+    String? activeUserTitle,
+    String? activeUserThumb,
     String? linkCode,
     List<PlexHomeUser>? homeUsers,
     String? serverName,
@@ -54,6 +64,9 @@ class AuthState {
       awaitingLink: awaitingLink ?? this.awaitingLink,
       accountToken: accountToken ?? this.accountToken,
       userToken: userToken ?? this.userToken,
+      activeUserId: activeUserId ?? this.activeUserId,
+      activeUserTitle: activeUserTitle ?? this.activeUserTitle,
+      activeUserThumb: activeUserThumb ?? this.activeUserThumb,
       linkCode: linkCode ?? this.linkCode,
       homeUsers: homeUsers ?? this.homeUsers,
       serverName: serverName ?? this.serverName,

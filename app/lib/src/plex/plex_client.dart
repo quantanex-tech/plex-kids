@@ -16,15 +16,16 @@ class PlexClient {
             connectTimeout: const Duration(seconds: 10),
             receiveTimeout: const Duration(seconds: 20),
             // Plex can return XML by default; we explicitly request JSON.
+            // Some Plex endpoints are picky about where the token lives, so we
+            // send it in BOTH header and query params (per request).
             headers: {
               'X-Plex-Token': token,
               'Accept': 'application/json',
             },
-            queryParameters: const {
-              'X-Plex-Token': null, // keep token in header only
-            },
           ),
         );
+
+  String get _token => (_dio.options.headers['X-Plex-Token'] ?? '').toString();
 
   Future<bool> ping() async {
     final res = await _dio.get('/');
@@ -35,7 +36,8 @@ class PlexClient {
     // /library/sections is the primary way to enumerate libraries.
     final res = await _dio.get(
       '/library/sections',
-      queryParameters: const {
+      queryParameters: {
+        'X-Plex-Token': _token,
         'X-Plex-Container-Start': 0,
         'X-Plex-Container-Size': 100,
       },
@@ -65,6 +67,7 @@ class PlexClient {
     final res = await _dio.get(
       '/library/onDeck',
       queryParameters: {
+        'X-Plex-Token': _token,
         'X-Plex-Container-Start': 0,
         'X-Plex-Container-Size': size,
       },
@@ -78,6 +81,7 @@ class PlexClient {
     final res = await _dio.get(
       '/library/sections/$libraryId/recentlyAdded',
       queryParameters: {
+        'X-Plex-Token': _token,
         'X-Plex-Container-Start': 0,
         'X-Plex-Container-Size': size,
       },
@@ -92,6 +96,7 @@ class PlexClient {
     final res = await _dio.get(
       '/library/metadata/$showRatingKey/allLeaves',
       queryParameters: {
+        'X-Plex-Token': _token,
         'X-Plex-Container-Start': 0,
         'X-Plex-Container-Size': size,
       },
@@ -107,6 +112,7 @@ class PlexClient {
     final res = await _dio.get(
       '/library/sections/$libraryId/all',
       queryParameters: {
+        'X-Plex-Token': _token,
         'sort': 'random',
         'X-Plex-Container-Start': 0,
         'X-Plex-Container-Size': size,
@@ -118,7 +124,12 @@ class PlexClient {
 
   /// Fetch metadata for a given ratingKey and return the first playable Part key.
   Future<String> getFirstPartKey({required String ratingKey}) async {
-    final res = await _dio.get('/library/metadata/$ratingKey');
+    final res = await _dio.get(
+      '/library/metadata/$ratingKey',
+      queryParameters: {
+        'X-Plex-Token': _token,
+      },
+    );
     final info = PlexPlaybackParser.parseFirstPart(res.data);
     if (info == null) {
       throw StateError('No playable part found for ratingKey=$ratingKey');

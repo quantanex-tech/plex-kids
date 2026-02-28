@@ -171,7 +171,7 @@ class AuthController extends StateNotifier<AuthState> {
       );
     } catch (e) {
       // Do not rethrow: keep the UI alive and show the error message.
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: PlexHomeUsersApi.describeSwitchError(e));
     }
   }
 

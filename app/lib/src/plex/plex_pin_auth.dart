@@ -22,10 +22,13 @@ class PlexPinAuth {
         );
 
   Future<PlexPin> createPin({required String clientIdentifier}) async {
+    // NOTE: "strong" PINs appear to generate longer codes that are NOT accepted
+    // by the https://plex.tv/link 4-character code entry UI.
+    // For device link UX, we use the standard short code.
     final res = await _dio.post(
       '/api/v2/pins',
-      queryParameters: {
-        'strong': 'true',
+      queryParameters: const {
+        'strong': 'false',
       },
       data: {
         'X-Plex-Client-Identifier': clientIdentifier,
@@ -46,11 +49,9 @@ class PlexPinAuth {
   /// We intentionally use the classic link flow. The app.plex.tv hash route has
   /// proven brittle (dead-end "unable to complete this request" on some setups).
   String buildAuthUrl({required PlexPin pin, required String clientIdentifier}) {
-    final code = Uri.encodeComponent(pin.code);
-    // clientIdentifier is unused in this URL but kept for API symmetry.
-    // (kept to allow future clientId binding if Plex requires it)
-
-    return 'https://plex.tv/link?code=$code';
+    // We open the link page and let the user enter the 4-character code.
+    // Passing code=... in the URL has been unreliable.
+    return 'https://plex.tv/link';
   }
 
   Future<String> pollForAuthToken({

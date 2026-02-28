@@ -83,10 +83,16 @@ class _AuthView extends ConsumerWidget {
               const SizedBox(height: 6),
               SelectableText(
                 state.linkCode!,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(letterSpacing: 2),
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(letterSpacing: 4),
               ),
               const SizedBox(height: 6),
-              const SelectableText('https://plex.tv/link'),
+              const SelectableText('Go to: https://plex.tv/link'),
+              const SizedBox(height: 6),
+              Text(
+                'Tip: copy the code above, then enter it in the browser.\n'
+                'If you hit "code expired", press Clear session and try again.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
             const SizedBox(height: 16),
             if (state.accountToken != null && state.homeUsers.isNotEmpty) ...[

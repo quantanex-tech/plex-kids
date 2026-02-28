@@ -62,20 +62,21 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<void> signIn() async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true, error: null, linkCode: null);
 
     try {
       final clientIdentifier = await _ensureClientIdentifier();
 
-      // 1) Create PIN + open browser
+      // 1) Create PIN (show code to user)
       final pin = await _pinAuth.createPin(clientIdentifier: clientIdentifier);
-      state = state.copyWith(linkCode: pin.code);
+      state = state.copyWith(linkCode: pin.code.toUpperCase());
 
+      // 2) Open browser to link page (user enters code)
       final url = _pinAuth.buildAuthUrl(pin: pin, clientIdentifier: clientIdentifier);
       final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       if (!ok) throw StateError('Could not open browser for Plex login');
 
-      // 2) Poll for account token
+      // 3) Poll for account token
       final accountToken = await _pinAuth.pollForAuthToken(pin: pin, clientIdentifier: clientIdentifier);
       await _store.writeAccountToken(accountToken);
 

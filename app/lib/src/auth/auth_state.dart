@@ -11,6 +11,9 @@ class AuthState {
   final String? accountToken;
   final String? userToken;
 
+  /// Owner/home admin user id as returned by plex.tv home users list.
+  final String? ownerUserId;
+
   final String? activeUserId;
   final String? activeUserTitle;
   final String? activeUserThumb;
@@ -34,6 +37,7 @@ class AuthState {
     this.awaitingLink = false,
     this.accountToken,
     this.userToken,
+    this.ownerUserId,
     this.activeUserId,
     this.activeUserTitle,
     this.activeUserThumb,
@@ -53,6 +57,7 @@ class AuthState {
     bool? awaitingLink,
     String? accountToken,
     String? userToken,
+    String? ownerUserId,
     String? activeUserId,
     String? activeUserTitle,
     String? activeUserThumb,
@@ -69,6 +74,7 @@ class AuthState {
       awaitingLink: awaitingLink ?? this.awaitingLink,
       accountToken: accountToken ?? this.accountToken,
       userToken: userToken ?? this.userToken,
+      ownerUserId: ownerUserId ?? this.ownerUserId,
       activeUserId: activeUserId ?? this.activeUserId,
       activeUserTitle: activeUserTitle ?? this.activeUserTitle,
       activeUserThumb: activeUserThumb ?? this.activeUserThumb,

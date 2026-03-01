@@ -40,8 +40,13 @@ class PlexHomeUsersApi {
     for (final u in xml.findAllElements('User')) {
       final id = u.getAttribute('id') ?? '';
       final title = u.getAttribute('title') ?? '';
-      final managed = (u.getAttribute('managed') ?? '0') == '1';
-      final protected = (u.getAttribute('protected') ?? '0') == '1';
+      bool truthy(String? v) {
+        final s = (v ?? '').trim().toLowerCase();
+        return s == '1' || s == 'true' || s == 'yes';
+      }
+
+      final managed = truthy(u.getAttribute('managed'));
+      final protected = truthy(u.getAttribute('protected'));
       final thumb = (u.getAttribute('thumb') ?? '').trim();
 
       if (id.isEmpty || title.isEmpty) continue;

@@ -163,8 +163,8 @@ class AuthController extends StateNotifier<AuthState> {
         homeUsers: users,
         linkCode: null,
         awaitingLink: false,
-        // Default to the first user (usually the main account) until a profile
-        // is explicitly selected.
+        ownerUserId: users.first.id,
+        // Default to owner until a profile is explicitly selected.
         activeUserId: users.first.id,
         activeUserTitle: users.first.title,
         activeUserThumb: users.first.thumb,
@@ -190,7 +190,13 @@ class AuthController extends StateNotifier<AuthState> {
       final selected = state.homeUsers.where((u) => u.id == userId).firstOrNull;
       if (selected == null) throw StateError('Unknown user');
 
-      final userToken = !selected.isManaged
+      // Do not rely on plex.tv returning a reliable "managed" flag. In practice
+      // for Plex Home the owner token represents only the owner, and all other
+      // home users should be switched.
+      final ownerId = state.ownerUserId ?? (state.homeUsers.isNotEmpty ? state.homeUsers.first.id : null);
+      final shouldSwitch = ownerId == null ? true : selected.id != ownerId;
+
+      final userToken = !shouldSwitch
           ? accountToken
           : await _homeUsers.switchUser(
               accountToken: accountToken,

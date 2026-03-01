@@ -25,4 +25,14 @@ GitHub Actions builds a **debug APK** on every push to `main`.
 - Artifact name: `plex-kids-debug-apk`
 - File: `app-debug.apk`
 
-This is intended for easy sideload testing (e.g. via Obtainium).
+This is intended for easy sideload testing.
+
+### Releases (recommended for Obtainium)
+There is a manual workflow to publish a GitHub Release with an attached debug APK.
+
+How to run:
+- GitHub → Actions → **Release APK** → Run workflow
+- Enter a tag like `v0.0.1` (pre-release default: true)
+
+The release will include:
+- `plex-kids-<tag>-debug.apk`

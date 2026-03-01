@@ -208,12 +208,30 @@ class AuthController extends StateNotifier<AuthState> {
 
       await _store.writeUserToken(userToken);
 
-      // 2) Discover servers (assume one server for MVP)
+      final tokenUser = await _plexTv.getUser(token: userToken);
+
+      // If we already have a working server selection, don't redo connection
+      // selection during profile switching. Just swap the token and keep the
+      // same server URL; this avoids timeouts and keeps switching snappy.
+      if (state.serverBaseUrl != null && state.serverMachineId != null) {
+        state = state.copyWith(
+          isLoading: false,
+          userToken: userToken,
+          activeUserId: selected.id,
+          activeUserTitle: selected.title,
+          activeUserThumb: selected.thumb,
+          activeTokenUsername: tokenUser.username ?? tokenUser.email ?? tokenUser.title,
+        );
+
+        return true;
+      }
+
+      // Fallback: discover servers (assume one server for MVP)
       final servers = await _resources.listServers(token: userToken);
       if (servers.isEmpty) throw StateError('No Plex servers found for this account');
       final server = servers.first;
 
-      // 3) Choose best connection (local first, but short timeouts)
+      // Choose best connection (local first, but short timeouts)
       final candidates = server.connections.map((c) => (c.uri, c.local)).toList(growable: false);
       final best = await _selector.chooseBest(
         candidates: candidates,
@@ -223,8 +241,6 @@ class AuthController extends StateNotifier<AuthState> {
       );
 
       await _store.writeServerSelection(machineId: server.machineIdentifier, baseUrl: best.baseUrl);
-
-      final tokenUser = await _plexTv.getUser(token: userToken);
 
       state = state.copyWith(
         isLoading: false,

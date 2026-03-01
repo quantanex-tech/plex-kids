@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'plex_headers.dart';
 import 'plex_media_models.dart';
 import 'plex_models.dart';
 import 'plex_playback_parser.dart';
@@ -10,6 +11,7 @@ class PlexClient {
   PlexClient({
     required String baseUrl,
     required String token,
+    required String clientIdentifier,
   }) : _dio = Dio(
           BaseOptions(
             baseUrl: baseUrl,
@@ -19,8 +21,8 @@ class PlexClient {
             // Some Plex endpoints are picky about where the token lives, so we
             // send it in BOTH header and query params (per request).
             headers: {
+              ...PlexHeaders.base(clientIdentifier: clientIdentifier),
               'X-Plex-Token': token,
-              'Accept': 'application/json',
             },
           ),
         );

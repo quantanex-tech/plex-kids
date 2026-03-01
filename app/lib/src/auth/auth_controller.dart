@@ -40,6 +40,7 @@ class AuthController extends StateNotifier<AuthState> {
     final existing = await _store.readClientIdentifier();
     if (existing != null && existing.isNotEmpty) {
       _clientIdentifier = existing;
+      state = state.copyWith(clientIdentifier: existing);
       return existing;
     }
 
@@ -47,6 +48,7 @@ class AuthController extends StateNotifier<AuthState> {
     final id = 'plex-kids-${DateTime.now().microsecondsSinceEpoch}';
     await _store.writeClientIdentifier(id);
     _clientIdentifier = id;
+    state = state.copyWith(clientIdentifier: id);
     return id;
   }
 
@@ -61,6 +63,7 @@ class AuthController extends StateNotifier<AuthState> {
     state = state.copyWith(
       accountToken: account,
       userToken: user,
+      clientIdentifier: _clientIdentifier,
       serverBaseUrl: baseUrl,
       serverMachineId: machineId,
     );

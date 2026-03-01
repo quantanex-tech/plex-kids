@@ -28,14 +28,20 @@ final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
 final plexClientProvider = Provider<PlexClient?>((ref) {
   // Prefer auth-selected server/user tokens if present.
   final auth = ref.watch(authControllerProvider);
-  if (auth.userToken != null && auth.serverBaseUrl != null) {
-    return PlexClient(baseUrl: auth.serverBaseUrl!, token: auth.userToken!);
+  if (auth.userToken != null && auth.serverBaseUrl != null && auth.clientIdentifier != null) {
+    return PlexClient(
+      baseUrl: auth.serverBaseUrl!,
+      token: auth.userToken!,
+      clientIdentifier: auth.clientIdentifier!,
+    );
   }
 
   // Dev backdoor: allow .env PLEX_BASE_URL + PLEX_TOKEN.
   final cfg = ref.watch(appConfigProvider);
   if (!cfg.isConfigured) return null;
-  return PlexClient(baseUrl: cfg.plexBaseUrl, token: cfg.plexToken);
+  // For dev .env mode, we don't have a stable per-install identifier; use a
+  // constant. (For signed builds, AuthController persists a real identifier.)
+  return PlexClient(baseUrl: cfg.plexBaseUrl, token: cfg.plexToken, clientIdentifier: 'plex-kids-dev');
 });
 
 final plexLibrariesProvider = FutureProvider<List<PlexLibrary>>((ref) async {

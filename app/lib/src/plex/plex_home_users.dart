@@ -107,12 +107,25 @@ class PlexHomeUsersApi {
       ),
     );
 
-    final xml = XmlDocument.parse(res.data as String);
+    final raw = res.data as String;
+
+    // Most commonly the token is an attribute on a <User> element.
+    final xml = XmlDocument.parse(raw);
     final userEl = xml.findAllElements('User').firstOrNull;
-    final token = userEl?.getAttribute('authenticationToken') ?? '';
-    if (token.isEmpty) {
-      throw StateError('Failed to switch user (no token returned).');
+    var token = userEl?.getAttribute('authenticationToken') ?? '';
+
+    // Fallback: some responses differ in casing/structure. If the raw payload
+    // includes authenticationToken, extract it directly.
+    if (token.isEmpty && raw.contains('authenticationToken')) {
+      final m = RegExp('authenticationToken="([^"]+)"').firstMatch(raw);
+      if (m != null) token = m.group(1) ?? '';
     }
+
+    if (token.isEmpty) {
+      final snippet = raw.length > 500 ? raw.substring(0, 500) : raw;
+      throw StateError('Failed to switch user (no token returned). Response snippet: $snippet');
+    }
+
     return token;
   }
 

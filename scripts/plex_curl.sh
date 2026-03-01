@@ -33,7 +33,18 @@ owner_checks() {
 switch_user() {
   local user_id="$1"
   echo "== plex.tv switch user $user_id =="
-  curl -sS -X POST "https://plex.tv/api/home/users/${user_id}/switch?X-Plex-Token=${PLEX_TOKEN}" | head -c 600
+
+  # plex.tv requires standard Plex client headers for the switch endpoint.
+  local client_id="${PLEX_CLIENT_IDENTIFIER:-plex-kids-dev}"
+
+  curl -sS -X POST \
+    -H "X-Plex-Product: Plex Kids" \
+    -H "X-Plex-Version: 0.0.1" \
+    -H "X-Plex-Device: Android" \
+    -H "X-Plex-Platform: Android" \
+    -H "X-Plex-Device-Name: plex-kids" \
+    -H "X-Plex-Client-Identifier: ${client_id}" \
+    "https://plex.tv/api/home/users/${user_id}/switch?X-Plex-Token=${PLEX_TOKEN}" | head -c 600
   echo
   echo "(Look for authenticationToken=\"...\")"
 }

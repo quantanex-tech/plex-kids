@@ -175,10 +175,11 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> selectHomeUser({required String userId, String? pin}) async {
+  Future<bool> selectHomeUser({required String userId, String? pin}) async {
     final accountToken = state.accountToken;
     if (accountToken == null || accountToken.isEmpty) {
-      throw StateError('Not signed in');
+      state = state.copyWith(error: 'Not signed in');
+      return false;
     }
 
     state = state.copyWith(isLoading: true, error: null);
@@ -236,9 +237,12 @@ class AuthController extends StateNotifier<AuthState> {
         serverMachineId: server.machineIdentifier,
         serverBaseUrl: best.baseUrl,
       );
+
+      return true;
     } catch (e) {
       // Do not rethrow: keep the UI alive and show the error message.
       state = state.copyWith(isLoading: false, error: PlexHomeUsersApi.describeSwitchError(e));
+      return false;
     }
   }
 

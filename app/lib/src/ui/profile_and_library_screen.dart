@@ -38,6 +38,13 @@ class _ProfileAndLibraryScreenState extends ConsumerState<ProfileAndLibraryScree
         padding: const EdgeInsets.all(16),
         children: [
           Text('Current profile', style: Theme.of(context).textTheme.titleMedium),
+          if (auth.error != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              auth.error!,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error),
+            ),
+          ],
           const SizedBox(height: 8),
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -82,7 +89,16 @@ class _ProfileAndLibraryScreenState extends ConsumerState<ProfileAndLibraryScree
                 onTap: auth.isLoading
                     ? null
                     : () async {
-                        await ref.read(authControllerProvider.notifier).selectHomeUser(userId: u.id);
+                        final ok = await ref.read(authControllerProvider.notifier).selectHomeUser(userId: u.id);
+                        if (!ok) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Failed to switch profile. See error message above.')),
+                            );
+                          }
+                          return;
+                        }
+
                         ref.invalidate(onDeckProvider);
                         ref.invalidate(plexLibrariesProvider);
                         ref.invalidate(selectedLibraryProvider);

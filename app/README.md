@@ -1,17 +1,22 @@
-# plex_kids
+# Plex Kids (Flutter app)
 
-A new Flutter project.
+## Run locally
+From repo root:
 
-## Getting Started
+### Linux/macOS (repo-local Flutter SDK)
+```bash
+cd app
+../scripts/flutter.sh pub get
+../scripts/flutter.sh run
+```
 
-This project is a starting point for a Flutter application.
+### Windows (system Flutter)
+```powershell
+cd app
+flutter pub get
+flutter run
+```
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## CI builds
+A debug APK is built on every push to `main` via GitHub Actions.
+Download from Actions → latest run → Artifacts → `plex-kids-debug-apk`.

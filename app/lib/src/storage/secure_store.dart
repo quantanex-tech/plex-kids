@@ -4,6 +4,7 @@ class SecureStore {
   static const _kClientIdentifier = 'plex.clientIdentifier';
   static const _kAccountToken = 'plex.accountToken';
   static const _kUserToken = 'plex.userToken';
+  static const _kServerAccessToken = 'plex.serverAccessToken';
   static const _kServerMachineId = 'plex.serverMachineId';
   static const _kServerBaseUrl = 'plex.serverBaseUrl';
 
@@ -19,6 +20,9 @@ class SecureStore {
 
   Future<String?> readUserToken() => _storage.read(key: _kUserToken);
   Future<void> writeUserToken(String token) => _storage.write(key: _kUserToken, value: token);
+
+  Future<String?> readServerAccessToken() => _storage.read(key: _kServerAccessToken);
+  Future<void> writeServerAccessToken(String token) => _storage.write(key: _kServerAccessToken, value: token);
 
   Future<void> writeServerSelection({required String machineId, required String baseUrl}) async {
     await _storage.write(key: _kServerMachineId, value: machineId);

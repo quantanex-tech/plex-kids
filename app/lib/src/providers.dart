@@ -28,12 +28,15 @@ final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
 final plexClientProvider = Provider<PlexClient?>((ref) {
   // Prefer auth-selected server/user tokens if present.
   final auth = ref.watch(authControllerProvider);
-  if (auth.userToken != null && auth.serverBaseUrl != null && auth.clientIdentifier != null) {
-    return PlexClient(
-      baseUrl: auth.serverBaseUrl!,
-      token: auth.userToken!,
-      clientIdentifier: auth.clientIdentifier!,
-    );
+  if (auth.serverBaseUrl != null && auth.clientIdentifier != null) {
+    final token = auth.serverAccessToken ?? auth.userToken;
+    if (token != null) {
+      return PlexClient(
+        baseUrl: auth.serverBaseUrl!,
+        token: token,
+        clientIdentifier: auth.clientIdentifier!,
+      );
+    }
   }
 
   // Dev backdoor: allow .env PLEX_BASE_URL + PLEX_TOKEN.

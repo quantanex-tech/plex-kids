@@ -57,12 +57,14 @@ class AuthController extends StateNotifier<AuthState> {
 
     final account = await _store.readAccountToken();
     final user = await _store.readUserToken();
+    final serverAccess = await _store.readServerAccessToken();
     final baseUrl = await _store.readServerBaseUrl();
     final machineId = await _store.readServerMachineId();
 
     state = state.copyWith(
       accountToken: account,
       userToken: user,
+      serverAccessToken: serverAccess,
       clientIdentifier: _clientIdentifier,
       serverBaseUrl: baseUrl,
       serverMachineId: machineId,
@@ -213,6 +215,20 @@ class AuthController extends StateNotifier<AuthState> {
 
       final tokenUser = await _plexTv.getUser(token: userToken);
 
+      // Always resolve a server access token for the active user. Managed user
+      // switch tokens from plex.tv are not always accepted by the PMS directly;
+      // /api/resources provides the per-server access token.
+      final serversForUser = await _resources.listServers(token: userToken);
+      if (serversForUser.isEmpty) throw StateError('No Plex servers found for this user');
+
+      final preferredMachineId = state.serverMachineId;
+      final serverForUser = preferredMachineId == null
+          ? serversForUser.first
+          : (serversForUser.where((s) => s.machineIdentifier == preferredMachineId).firstOrNull ??
+              serversForUser.first);
+
+      await _store.writeServerAccessToken(serverForUser.accessToken);
+
       // If we already have a working server selection, don't redo connection
       // selection during profile switching. Just swap the token and keep the
       // same server URL; this avoids timeouts and keeps switching snappy.
@@ -220,6 +236,7 @@ class AuthController extends StateNotifier<AuthState> {
         state = state.copyWith(
           isLoading: false,
           userToken: userToken,
+          serverAccessToken: serverForUser.accessToken,
           activeUserId: selected.id,
           activeUserTitle: selected.title,
           activeUserThumb: selected.thumb,
@@ -229,10 +246,8 @@ class AuthController extends StateNotifier<AuthState> {
         return true;
       }
 
-      // Fallback: discover servers (assume one server for MVP)
-      final servers = await _resources.listServers(token: userToken);
-      if (servers.isEmpty) throw StateError('No Plex servers found for this account');
-      final server = servers.first;
+      // Fallback: pick server (assume one server for MVP)
+      final server = serverForUser;
 
       // Choose best connection (local first, but short timeouts)
       final candidates = server.connections.map((c) => (c.uri, c.local)).toList(growable: false);
@@ -248,6 +263,7 @@ class AuthController extends StateNotifier<AuthState> {
       state = state.copyWith(
         isLoading: false,
         userToken: userToken,
+        serverAccessToken: serverForUser.accessToken,
         activeUserId: selected.id,
         activeUserTitle: selected.title,
         activeUserThumb: selected.thumb,

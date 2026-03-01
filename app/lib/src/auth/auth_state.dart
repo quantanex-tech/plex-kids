@@ -9,7 +9,12 @@ class AuthState {
   final bool awaitingLink;
 
   final String? accountToken;
+
+  /// Token tied to the plex.tv user context (owner or switched home user).
   final String? userToken;
+
+  /// Token used to talk to the Plex Server (typically from /api/resources).
+  final String? serverAccessToken;
 
   /// Client identifier used for X-Plex-Client-Identifier.
   final String? clientIdentifier;
@@ -40,6 +45,7 @@ class AuthState {
     this.awaitingLink = false,
     this.accountToken,
     this.userToken,
+    this.serverAccessToken,
     this.clientIdentifier,
     this.ownerUserId,
     this.activeUserId,
@@ -61,6 +67,7 @@ class AuthState {
     bool? awaitingLink,
     String? accountToken,
     String? userToken,
+    String? serverAccessToken,
     String? clientIdentifier,
     String? ownerUserId,
     String? activeUserId,
@@ -79,6 +86,7 @@ class AuthState {
       awaitingLink: awaitingLink ?? this.awaitingLink,
       accountToken: accountToken ?? this.accountToken,
       userToken: userToken ?? this.userToken,
+      serverAccessToken: serverAccessToken ?? this.serverAccessToken,
       clientIdentifier: clientIdentifier ?? this.clientIdentifier,
       ownerUserId: ownerUserId ?? this.ownerUserId,
       activeUserId: activeUserId ?? this.activeUserId,

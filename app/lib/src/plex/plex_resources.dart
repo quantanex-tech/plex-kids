@@ -4,11 +4,13 @@ import 'package:xml/xml.dart';
 class PlexResourceServer {
   final String name;
   final String machineIdentifier;
+  final String accessToken;
   final List<PlexConnection> connections;
 
   const PlexResourceServer({
     required this.name,
     required this.machineIdentifier,
+    required this.accessToken,
     required this.connections,
   });
 }
@@ -44,6 +46,7 @@ class PlexResourcesApi {
 
       final name = d.getAttribute('name') ?? 'Plex Server';
       final machineId = d.getAttribute('clientIdentifier') ?? '';
+      final accessToken = d.getAttribute('accessToken') ?? '';
       if (machineId.isEmpty) continue;
 
       final connections = <PlexConnection>[];
@@ -57,6 +60,7 @@ class PlexResourcesApi {
       servers.add(PlexResourceServer(
         name: name,
         machineIdentifier: machineId,
+        accessToken: accessToken,
         connections: connections,
       ));
     }

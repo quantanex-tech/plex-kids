@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:xml/xml.dart';
 
+import 'plex_headers.dart';
+
 class PlexHomeUser {
   final String id;
   final String title;
@@ -66,16 +68,19 @@ class PlexHomeUsersApi {
 
   Future<List<PlexHomeUser>> listUsers({required String accountToken, String? clientIdentifier}) async {
     // XML: https://plex.tv/api/home/users
+    final headers = <String, String>{
+      if (clientIdentifier != null && clientIdentifier.isNotEmpty)
+        ...PlexHeaders.base(clientIdentifier: clientIdentifier),
+      'X-Plex-Token': accountToken,
+    };
+
     final res = await _dio.get(
       '/api/home/users',
       queryParameters: {
         'X-Plex-Token': accountToken,
         if (clientIdentifier != null && clientIdentifier.isNotEmpty) 'X-Plex-Client-Identifier': clientIdentifier,
       },
-      options: Options(headers: {
-        'X-Plex-Token': accountToken,
-        if (clientIdentifier != null && clientIdentifier.isNotEmpty) 'X-Plex-Client-Identifier': clientIdentifier,
-      }),
+      options: Options(headers: headers),
     );
 
     return parseUsersXml(res.data as String);
@@ -89,8 +94,16 @@ class PlexHomeUsersApi {
     String? clientIdentifier,
   }) async {
     // XML: POST https://plex.tv/api/home/users/{id}/switch
+    // Plex requires standard client headers for this endpoint.
     // Some Plex setups expect tokens/pins in headers rather than query params.
     // We send both where possible.
+    final headers = <String, String>{
+      if (clientIdentifier != null && clientIdentifier.isNotEmpty)
+        ...PlexHeaders.base(clientIdentifier: clientIdentifier),
+      'X-Plex-Token': accountToken,
+      if (pin != null && pin.isNotEmpty) 'X-Plex-PIN': pin,
+    };
+
     final res = await _dio.post(
       '/api/home/users/$userId/switch',
       queryParameters: {
@@ -98,13 +111,7 @@ class PlexHomeUsersApi {
         if (pin != null && pin.isNotEmpty) 'pin': pin,
         if (clientIdentifier != null && clientIdentifier.isNotEmpty) 'X-Plex-Client-Identifier': clientIdentifier,
       },
-      options: Options(
-        headers: {
-          'X-Plex-Token': accountToken,
-          if (pin != null && pin.isNotEmpty) 'X-Plex-PIN': pin,
-          if (clientIdentifier != null && clientIdentifier.isNotEmpty) 'X-Plex-Client-Identifier': clientIdentifier,
-        },
-      ),
+      options: Options(headers: headers),
     );
 
     final raw = res.data as String;
